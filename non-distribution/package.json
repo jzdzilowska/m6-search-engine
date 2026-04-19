@@ -1,0 +1,47 @@
+{
+  "name": "cs1380:m0",
+  "version": "1.0.0",
+  "author": {
+    "name": "Julia Zdzilowska",
+    "email": "julia_zdzilowska@brown.edu",
+    "cslogin": "jzdzilow"
+  },
+  "description": "A set of components for cs1380's search engine.",
+  "dependencies": {
+    "html-to-text": "^9.0.5",
+    "jsdom": "^23.2.0",
+    "natural": "^6.10.4"
+  },
+  "scripts": {
+    "test": "jest --maxWorkers=1",
+    "lint": "eslint . --config .eslintrc --rulesdir ../scripts/eslint-rules --fix"
+  },
+  "devDependencies": {
+    "eslint": "^8.55.0",
+    "eslint-config-google": "^0.14.0",
+    "javascript-obfuscator": "^4.1.0",
+    "jest": "^29.7.0"
+  },
+  "ec2": {
+    "ip": "3.16.27.36",
+    "port": 8080
+  },
+  "report": [
+    {
+      "milestone": "M0",
+      "hours": 20,
+      "loc": 385,
+      "dev": {
+        "cpu-no": "Apple M2",
+        "mem-gb": 16,
+        "ssd-gb": 512
+      },
+      "throughput": {
+        "dev": [1.12, 1.12, 3.63],
+        "aws": [0.68, 0.68, 1.96],
+        "gs": []
+      },
+      "dloc": 5000
+    }
+  ]
+}

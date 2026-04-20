@@ -10,7 +10,7 @@ set -e
 # ─── Configuration (edit these) ──────────────────────────────────────
 SEEDS="https://en.wikipedia.org/wiki/Computer_science"
 MAX_PAGES=1000
-NODES=15
+NODES=30
 BASE_PORT=7110
 QUERY_TERMS=(
     "Machine Learning" "Operating System" "Compiler Construction" 
@@ -18,7 +18,7 @@ QUERY_TERMS=(
     "Software Testing" "Human-Computer Interaction" "Cloud Computing"
     "Parallel Computing" "Information Theory" "Virtual Machine" "Alan Turing" "Grace Hopper" "Edsger Dijkstra" "Ada Lovelace"
 )
-QUERY_RUNS=100
+QUERY_RUNS=1000
 WARMUP_QUERIES=2
 CLEAN=true          # wipe store before run
 SKIP_CRAWL=false

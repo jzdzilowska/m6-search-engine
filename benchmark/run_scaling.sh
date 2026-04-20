@@ -39,15 +39,23 @@ echo "nodes,crawl_duration_ms,crawl_latency_ms,crawl_throughput,index_duration_m
 
 echo "════════════════════════════════════════════════════════════"
 echo " Scaling Benchmark — ${#NODE_COUNTS[@]} runs"
-echo " Pages: $MAX_PAGES | Query runs: $QUERY_RUNS"
+echo " Pages: <10 nodes → 500, ≥10 nodes → $MAX_PAGES | Query runs: $QUERY_RUNS"
 echo " Node counts: ${NODE_COUNTS[*]}"
 echo " Output: $SCALING_DIR"
 echo "════════════════════════════════════════════════════════════"
 
 for N in "${NODE_COUNTS[@]}"; do
   echo ""
+
+  # Fewer pages for small clusters to avoid shuffle bottleneck
+  if [ "$N" -lt 10 ]; then
+    RUN_PAGES=500
+  else
+    RUN_PAGES=$MAX_PAGES
+  fi
+
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo " Running with $N node(s)..."
+  echo " Running with $N node(s) — $RUN_PAGES pages..."
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   # Kill leftover workers
@@ -61,7 +69,7 @@ for N in "${NODE_COUNTS[@]}"; do
 
   ARGS=(
     --seeds "$SEEDS"
-    --maxPages "$MAX_PAGES"
+    --maxPages "$RUN_PAGES"
     --nodes "$N"
     --basePort "$BASE_PORT"
     --queryTerms "${QUERY_TERMS[*]}"

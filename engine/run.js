@@ -148,7 +148,7 @@ dist.node.start((e) => {
 /* ------------------------------------------------------------------ */
 
 function runCrawlPhase() {
-  const {crawl} = require('./crawler');
+  const {crawl} = require('./old_crawler');
   crawl({
     seeds,
     maxPages: args.maxPages,

@@ -3,9 +3,9 @@ const http = require('http');
 const https = require('https');
 const {URL} = require('url');
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 50;
 const FETCH_TIMEOUT = 2500;// 1 second
-const MAX_BODY = 5 * 1024 * 1024; // 5 MB
+const MAX_BODY = 512 * 1024; // 512 KB — raw HTML; text is truncated to 50KB anyway
 
 const STATE_KEY = '__crawler_state__';
 
@@ -45,8 +45,8 @@ function crawl(config, callback) {
       }
       console.log(`[crawler] Resuming: ${state.totalCrawled} pages already crawled, ${state.frontier.length} URLs in frontier`);
       visited = new Set(state.visited || []);
-      queued = new Set(state.queued || []);
       frontier = state.frontier || [];
+      queued = new Set([...visited, ...frontier]);
       totalCrawled = state.totalCrawled || 0;
       crawledUrls = state.crawledUrls || [];
       cb();
@@ -57,7 +57,6 @@ function crawl(config, callback) {
   function saveState(cb) {
     const state = {
       visited: [...visited],
-      queued: [...queued],
       frontier,
       totalCrawled,
       crawledUrls,
@@ -179,7 +178,7 @@ function crawl(config, callback) {
       } catch (e) { /* */ }
     }
 
-    const uniqueLinks = [...new Set(outlinks)].slice(0, 500);
+    const uniqueLinks = [...new Set(outlinks)].slice(0, 100);
     const results = [];
 
     // Emit processed page content (special prefix key)

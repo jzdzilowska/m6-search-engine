@@ -192,7 +192,7 @@ function buildIndex(config, callback) {
             totalDocs, '__totalDocs__',
             () => {
               // Batch-store posting lists to avoid overwhelming the cluster
-              const BATCH = 50;
+              const BATCH = 500;
               let idx = 0;
 
               function storeBatch() {

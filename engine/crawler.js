@@ -82,7 +82,7 @@ function crawl(config, callback) {
         if (res.statusCode >= 300 && res.statusCode < 400 &&
             res.headers.location) {
           const next = new URL(res.headers.location, pageUrl).href;
-          // console.log(`[crawler]   redirect ${res.statusCode} → ${next}`);
+          console.log(`[crawler]   redirect ${res.statusCode} → ${next}`);
           res.resume();
           return fetchPage(next, cb);
         }
@@ -103,7 +103,7 @@ function crawl(config, callback) {
           }
         });
         res.on('end', () => {
-          console.log(`[crawler]   ${pageUrl} → ${body.length} bytes`);
+          // console.log(`[crawler]   ${pageUrl} → ${body.length} bytes`);
           done(null, body);
         });
         res.on('error', (err) => {

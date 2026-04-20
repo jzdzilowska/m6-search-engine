@@ -51,8 +51,8 @@ const args = require('yargs/yargs')(process.argv.slice(2))
       type: 'string',
       describe: '[coordinator] Comma-separated seed URLs',
       default: [
-        'https://cs.brown.edu/courses/csci1380/sandbox/1/',
-        'https://cs.brown.edu/courses/csci1380/sandbox/2/',
+        'https://en.wikipedia.org/wiki/Computer_science',
+        'https://en.wikipedia.org/wiki/Alan_Turing',
       ].join(','),
     })
     .option('maxPages', {

@@ -9,7 +9,7 @@ node engine/run.js --seeds "https://en.wikipedia.org/wiki/Computer_science" --ma
 node engine/run.js --seeds "https://en.wikipedia.org/wiki/Computer_science" --maxPages 1000 --nodes 5 --skipCrawl --skipIndex 
 
 # kill ports
-for port in $(seq 7110 7114); do lsof -ti:$port | xargs -r kill -9; done
+for port in $(seq 7110 7144); do lsof -ti:$port | xargs -r kill -9; done
 ```
 
 Index hanged at 1k pages (either that or i got impatient. tried with 5 nodes, doing 10 now)

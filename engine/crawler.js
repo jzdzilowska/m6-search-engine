@@ -9,20 +9,15 @@ const BATCH_SIZE = 10;
 const FETCH_TIMEOUT = 15000;
 const MAX_BODY = 5 * 1024 * 1024; // 5 MB
 
+const STATE_KEY = '__crawler_state__';
+
 /**
- * Distributed crawler.
+ * Distributed crawler with persistence.
  *
  * The coordinator fetches pages in parallel batches, extracts text + links,
- * and stores results in the distributed page store (sharded across workers).
- * New URLs are added to the frontier for subsequent waves.
- *
- * @param {object}   config
- * @param {string[]} config.seeds
- * @param {number}   [config.maxPages]
- * @param {string}   [config.groupName]
- * @param {string}   [config.pagesGroupName]
- * @param {number}   [config.batchSize]
- * @param {Function} callback - (err, {totalCrawled, crawledUrls})
+ * and stores results in the distributed crawl store (sharded across workers).
+ * Frontier and visited set are persisted after each wave so the crawler can
+ * stop and resume from where it left off.
  */
 function crawl(config, callback) {
   const distribution = globalThis.distribution;
@@ -30,11 +25,40 @@ function crawl(config, callback) {
   const crawlGid = config.groupName || 'crawl';
   const batchSize = config.batchSize || BATCH_SIZE;
 
-  const visited = new Set();
-  const queued = new Set(config.seeds);
-  const frontier = [...config.seeds];
+  let visited = new Set();
+  let queued = new Set(config.seeds);
+  let frontier = [...config.seeds];
   let totalCrawled = 0;
-  const crawledUrls = [];
+  let crawledUrls = [];
+
+  /* ---- try to resume from persisted state ---- */
+  function loadState(cb) {
+    distribution[crawlGid].store.get(STATE_KEY, (e, state) => {
+      if (e || !state) {
+        console.log('[crawler] No saved state found, starting fresh');
+        return cb();
+      }
+      console.log(`[crawler] Resuming: ${state.totalCrawled} pages already crawled, ${state.frontier.length} URLs in frontier`);
+      visited = new Set(state.visited || []);
+      queued = new Set(state.queued || []);
+      frontier = state.frontier || [];
+      totalCrawled = state.totalCrawled || 0;
+      crawledUrls = state.crawledUrls || [];
+      cb();
+    });
+  }
+
+  /* ---- persist state after each wave ---- */
+  function saveState(cb) {
+    const state = {
+      visited: [...visited],
+      queued: [...queued],
+      frontier,
+      totalCrawled,
+      crawledUrls,
+    };
+    distribution[crawlGid].store.put(state, STATE_KEY, () => cb());
+  }
 
   /* ---- fetch a single URL ---- */
   function fetchPage(pageUrl, cb) {
@@ -145,7 +169,7 @@ function crawl(config, callback) {
   function runWave() {
     if (frontier.length === 0 || totalCrawled >= maxPages) {
       console.log(`[crawler] Complete. ${totalCrawled} pages crawled.`);
-      return callback(null, {totalCrawled, crawledUrls});
+      return saveState(() => callback(null, {totalCrawled, crawledUrls}));
     }
 
     const remaining = maxPages - totalCrawled;
@@ -159,7 +183,7 @@ function crawl(config, callback) {
     if (batch.length === 0) {
       if (frontier.length > 0) return setImmediate(runWave);
       console.log(`[crawler] Complete. ${totalCrawled} pages crawled.`);
-      return callback(null, {totalCrawled, crawledUrls});
+      return saveState(() => callback(null, {totalCrawled, crawledUrls}));
     }
 
     console.log(
@@ -168,7 +192,6 @@ function crawl(config, callback) {
         `| frontier: ${frontier.length}`,
     );
 
-    // Fetch all URLs in the batch concurrently
     let done = 0;
     const pageResults = [];
 
@@ -183,9 +206,8 @@ function crawl(config, callback) {
 
         if (++done < batch.length) return;
 
-        // All fetches done — store results in distributed page store
         if (pageResults.length === 0) {
-          return setImmediate(runWave);
+          return saveState(() => setImmediate(runWave));
         }
 
         let stored = 0;
@@ -203,7 +225,7 @@ function crawl(config, callback) {
           const pk = urlKey(content.url);
           distribution[crawlGid].store.put(content, pk, () => {
             if (++stored === pageResults.length) {
-              setImmediate(runWave);
+              saveState(() => setImmediate(runWave));
             }
           });
         });
@@ -211,7 +233,7 @@ function crawl(config, callback) {
     });
   }
 
-  runWave();
+  loadState(() => runWave());
 }
 
 module.exports = {crawl};

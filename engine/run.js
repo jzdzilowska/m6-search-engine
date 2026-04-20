@@ -124,7 +124,12 @@ dist.node.start((e) => {
       /* ---------- Pipeline ---------- */
       if (args.skipCrawl) {
         console.log('[run] Skipping crawl (--skipCrawl)');
-        return runIndexPhase([]);
+        dist['crawl'].store.get('__crawler_state__', (e, state) => {
+          const urls = (state && state.crawledUrls) ? state.crawledUrls : [];
+          console.log(`[run] Recovered ${urls.length} crawled URL(s) from saved state`);
+          return runIndexPhase(urls);
+        });
+        return;
       }
       runCrawlPhase();
     });

@@ -11,7 +11,7 @@
  */
 
 const distribution = require('../distribution');
-const {crawl: doCrawl} = require('../engine/crawler');
+const {crawl: doCrawl} = require('../engine/old_crawler');
 const {buildIndex} = require('../engine/indexer');
 const {search} = require('../engine/query');
 const {startServer} = require('../engine/server');

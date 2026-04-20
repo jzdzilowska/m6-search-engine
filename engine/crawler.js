@@ -5,7 +5,7 @@ const {convert} = require('html-to-text');
 const {JSDOM} = require('jsdom');
 const {URL} = require('url');
 
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 1000;
 const FETCH_TIMEOUT = 15000;
 const MAX_BODY = 5 * 1024 * 1024; // 5 MB
 

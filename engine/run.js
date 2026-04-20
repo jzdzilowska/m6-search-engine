@@ -105,7 +105,11 @@ function startWorker() {
       console.error('[worker] Failed to start:', e);
       process.exit(1);
     }
-    console.log(`[worker] Ready — listening on ${nodeIp}:${port}`);
+
+    const crawlService = require('./worker_crawl');
+    dist.local.routes.put(crawlService, 'crawl-fetch', () => {
+      console.log(`[worker] Ready — listening on ${nodeIp}:${port} (crawl-fetch registered)`);
+    });
   });
 
   process.on('SIGINT', () => {

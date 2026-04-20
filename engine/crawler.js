@@ -3,8 +3,8 @@ const http = require('http');
 const https = require('https');
 const {URL} = require('url');
 
-const BATCH_SIZE = 500;
-const FETCH_TIMEOUT = 5000;// 5 seconds
+const BATCH_SIZE = 1000;
+const FETCH_TIMEOUT = 1000;// 1 second
 const MAX_BODY = 5 * 1024 * 1024; // 5 MB
 
 const STATE_KEY = '__crawler_state__';

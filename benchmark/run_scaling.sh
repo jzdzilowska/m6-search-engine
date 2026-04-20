@@ -67,12 +67,15 @@ for N in "${NODE_COUNTS[@]}"; do
   lsof -ti:1234 2>/dev/null | xargs -r kill -9 2>/dev/null || true
   sleep 1
 
+  # Join query terms with commas
+  QUERY_TERMS_CSV=$(IFS=,; echo "${QUERY_TERMS[*]}")
+
   ARGS=(
     --seeds "$SEEDS"
     --maxPages "$RUN_PAGES"
     --nodes "$N"
     --basePort "$BASE_PORT"
-    --queryTerms "${QUERY_TERMS[*]}"
+    --queryTerms "$QUERY_TERMS_CSV"
     --queryRuns "$QUERY_RUNS"
     --warmupQueries "$WARMUP_QUERIES"
     --ip "$IP"

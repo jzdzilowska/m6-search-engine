@@ -23,6 +23,30 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.gridspec as gridspec
 import numpy as np
 
+# ── Poster color scheme ──
+POSTER = {
+    'blue': '#2563eb',
+    'cyan': '#0891b2',
+    'green': '#059669',
+    'orange': '#d97706',
+    'pink': '#db2777',
+    'purple': '#7c3aed',
+    'red': '#dc2626',
+    'yellow': '#ca8a04',
+    'bg': '#ffffff',
+    'surface': '#f5f5f7',
+    'surface2': '#eeeef0',
+    'text': '#1a1a1a',
+    'text_dim': '#555555',
+    'border': '#d1d1d6',
+}
+# Matches poster bar-fill-* order: blue, cyan, green, purple, orange, pink
+BAR_COLORS = [POSTER['blue'], POSTER['cyan'], POSTER['green'],
+              POSTER['purple'], POSTER['orange'], POSTER['pink']]
+# Lighter fill versions (alpha blended with white to simulate poster gradients)
+BAR_FILLS = ['#7ba3f2', '#52b8cc', '#4dc09e',
+             '#ac8ce8', '#e8a94d', '#e87aaf']
+
 
 def read_csv(path):
     """Read CSV into list of dicts."""
@@ -81,28 +105,48 @@ def main():
             throughput_labels.append(f"{comp}\n({thr_unit})")
             throughput_values.append(thr)
 
-    # ── Color palette ──
-    colors = ['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed', '#0891b2']
+    # ── Color palette (from poster) ──
+    colors = BAR_COLORS
 
-    # ── Build PDF with 3 pages: 2 charts + table ──
+    # ── Global matplotlib style matching poster ──
+    plt.rcParams.update({
+        'figure.facecolor': POSTER['bg'],
+        'axes.facecolor': POSTER['bg'],
+        'axes.edgecolor': POSTER['border'],
+        'axes.labelcolor': POSTER['text'],
+        'text.color': POSTER['text'],
+        'xtick.color': POSTER['text_dim'],
+        'ytick.color': POSTER['text_dim'],
+        'grid.color': POSTER['border'],
+        'grid.alpha': 0.3,
+    })
+
+    # ── Build PDF ──
     with PdfPages(pdf_path) as pdf:
         # ─── Page 1: Latency bar chart ───
         fig, ax = plt.subplots(figsize=(11, 6))
+        fig.set_facecolor(POSTER['bg'])
         x = np.arange(len(latency_labels))
         bars = ax.bar(x, latency_values,
-                      color=[colors[i % len(colors)] for i in range(len(x))],
-                      edgecolor='white', linewidth=0.5)
+                      color=[BAR_FILLS[i % len(BAR_FILLS)] for i in range(len(x))],
+                      edgecolor=[colors[i % len(colors)] for i in range(len(x))],
+                      linewidth=1.5)
         ax.set_xticks(x)
-        ax.set_xticklabels(latency_labels, fontsize=11)
-        ax.set_ylabel('Latency (ms)', fontsize=12)
-        ax.set_xlabel('Component', fontsize=12)
-        ax.set_title('Latency by Component', fontsize=14, fontweight='bold')
+        ax.set_xticklabels(latency_labels, fontsize=11, color=POSTER['text'])
+        ax.set_ylabel('Latency (ms)', fontsize=12, color=POSTER['text'])
+        ax.set_xlabel('Component', fontsize=12, color=POSTER['text'])
+        ax.set_title('Latency by Component', fontsize=14, fontweight='bold',
+                     color=POSTER['text'])
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        # Value labels on bars
-        for bar, val in zip(bars, latency_values):
+        ax.spines['bottom'].set_color(POSTER['border'])
+        ax.spines['left'].set_color(POSTER['border'])
+        # Value labels on bars (use matching accent color)
+        for i, (bar, val) in enumerate(zip(bars, latency_values)):
             ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height(),
-                    f'{val:.1f}', ha='center', va='bottom', fontsize=9)
+                    f'{val:.1f}', ha='center', va='bottom', fontsize=9,
+                    fontweight='bold',
+                    color=colors[i % len(colors)])
         plt.tight_layout()
         pdf.savefig(fig)
         plt.close(fig)
@@ -110,20 +154,27 @@ def main():
         # ─── Page 2: Throughput bar chart ───
         if throughput_values:
             fig, ax = plt.subplots(figsize=(11, 6))
+            fig.set_facecolor(POSTER['bg'])
             x = np.arange(len(throughput_labels))
             bars = ax.bar(x, throughput_values,
-                          color=[colors[i % len(colors)] for i in range(len(x))],
-                          edgecolor='white', linewidth=0.5)
+                          color=[BAR_FILLS[i % len(BAR_FILLS)] for i in range(len(x))],
+                          edgecolor=[colors[i % len(colors)] for i in range(len(x))],
+                          linewidth=1.5)
             ax.set_xticks(x)
-            ax.set_xticklabels(throughput_labels, fontsize=10)
-            ax.set_ylabel('Throughput (items/sec)', fontsize=12)
-            ax.set_xlabel('Component', fontsize=12)
-            ax.set_title('Throughput by Component', fontsize=14, fontweight='bold')
+            ax.set_xticklabels(throughput_labels, fontsize=10, color=POSTER['text'])
+            ax.set_ylabel('Throughput (items/sec)', fontsize=12, color=POSTER['text'])
+            ax.set_xlabel('Component', fontsize=12, color=POSTER['text'])
+            ax.set_title('Throughput by Component', fontsize=14, fontweight='bold',
+                         color=POSTER['text'])
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
-            for bar, val in zip(bars, throughput_values):
+            ax.spines['bottom'].set_color(POSTER['border'])
+            ax.spines['left'].set_color(POSTER['border'])
+            for i, (bar, val) in enumerate(zip(bars, throughput_values)):
                 ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height(),
-                        f'{val:.2f}', ha='center', va='bottom', fontsize=9)
+                        f'{val:.2f}', ha='center', va='bottom', fontsize=9,
+                        fontweight='bold',
+                        color=colors[i % len(colors)])
             plt.tight_layout()
             pdf.savefig(fig)
             plt.close(fig)
@@ -137,9 +188,9 @@ def main():
         )
 
         def add_footnote(fig):
-            fig.text(0.05, 0.02, cfg_text, fontsize=9, color='#888')
+            fig.text(0.05, 0.02, cfg_text, fontsize=9, color=POSTER['text_dim'])
             fig.text(0.95, 0.02, config.get('timestamp', ''),
-                     fontsize=9, color='#888', ha='right')
+                     fontsize=9, color=POSTER['text_dim'], ha='right')
 
         def style_table(tbl):
             tbl.auto_set_font_size(False)
@@ -147,18 +198,23 @@ def main():
             tbl.scale(1, 1.5)
             for (r, c), cell in tbl.get_celld().items():
                 if r == 0:
-                    cell.set_facecolor('#f5f5f5')
-                    cell.set_text_props(fontweight='bold')
-                cell.set_edgecolor('#ddd')
+                    cell.set_facecolor(POSTER['surface'])
+                    cell.set_text_props(fontweight='bold', color=POSTER['text'])
+                else:
+                    cell.set_facecolor(POSTER['bg'])
+                    cell.set_text_props(color=POSTER['text_dim'])
+                cell.set_edgecolor(POSTER['border'])
 
         # ─── Page 3: Duration summary table ───
         row_height = 0.45
         fig_h = max(4, 1.5 + (len(table_rows) + 1) * row_height)
         fig = plt.figure(figsize=(11, fig_h))
+        fig.set_facecolor(POSTER['bg'])
         ax1 = fig.add_subplot(111)
         ax1.axis('off')
         ax1.set_title('Duration Summary (seconds)', fontsize=14,
-                       fontweight='bold', pad=12, loc='left')
+                       fontweight='bold', pad=12, loc='left',
+                       color=POSTER['text'])
         tbl1 = ax1.table(cellText=table_rows,
                          colLabels=['Component', 'Duration (s)'],
                          cellLoc='left', loc='upper center',
@@ -183,10 +239,12 @@ def main():
                 ])
             fig_h = max(4, 1.5 + (len(q_data) + 1) * row_height)
             fig = plt.figure(figsize=(11, fig_h))
+            fig.set_facecolor(POSTER['bg'])
             ax2 = fig.add_subplot(111)
             ax2.axis('off')
             ax2.set_title('Query Latency Breakdown', fontsize=14,
-                           fontweight='bold', pad=12, loc='left')
+                           fontweight='bold', pad=12, loc='left',
+                           color=POSTER['text'])
             tbl2 = ax2.table(cellText=q_data, colLabels=q_col_labels,
                              cellLoc='left', loc='upper center',
                              colWidths=[0.3, 0.15, 0.15, 0.15, 0.1])
@@ -224,10 +282,12 @@ def main():
             # Overview page
             fig_h = max(4, 1.5 + (len(overview) + 1) * row_height)
             fig = plt.figure(figsize=(11, fig_h))
+            fig.set_facecolor(POSTER['bg'])
             ax = fig.add_subplot(111)
             ax.axis('off')
             ax.set_title('System Control Panel', fontsize=14,
-                         fontweight='bold', pad=12, loc='left')
+                         fontweight='bold', pad=12, loc='left',
+                         color=POSTER['text'])
             tbl = ax.table(cellText=overview,
                            colLabels=['Metric', 'Value'],
                            cellLoc='left', loc='upper center',
@@ -242,10 +302,12 @@ def main():
             if node_rows:
                 fig_h = max(4, 1.5 + (len(node_rows) + 1) * row_height)
                 fig = plt.figure(figsize=(11, fig_h))
+                fig.set_facecolor(POSTER['bg'])
                 ax2 = fig.add_subplot(111)
                 ax2.axis('off')
                 ax2.set_title('Per-Node Data Distribution', fontsize=14,
-                              fontweight='bold', pad=12, loc='left')
+                              fontweight='bold', pad=12, loc='left',
+                              color=POSTER['text'])
                 tbl2 = ax2.table(cellText=node_rows,
                                  colLabels=['Node', 'Value'],
                                  cellLoc='left', loc='upper center',

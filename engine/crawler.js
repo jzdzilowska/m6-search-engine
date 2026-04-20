@@ -5,8 +5,9 @@ const {convert} = require('html-to-text');
 const {JSDOM} = require('jsdom');
 const {URL} = require('url');
 
-const BATCH_SIZE = 10;
-const FETCH_TIMEOUT = 15000;
+const BATCH_SIZE = 100;
+const FETCH_TIMEOUT = 10000;
+// try to decrease fetch timeout from 15000ms to 5000ms
 const MAX_BODY = 5 * 1024 * 1024; // 5 MB
 
 const STATE_KEY = '__crawler_state__';
@@ -103,7 +104,7 @@ function crawl(config, callback) {
           }
         });
         res.on('end', () => {
-          console.log(`[crawler]   ${pageUrl} → ${body.length} bytes`);
+          // console.log(`[crawler]   ${pageUrl} → ${body.length} bytes`);
           done(null, body);
         });
         res.on('error', (err) => {

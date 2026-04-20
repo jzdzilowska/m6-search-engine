@@ -81,12 +81,38 @@ function mr(config) {
           cb(null, 'ok');
 
           if (phase === 'map') {
-            if (++mapDone === nodeCount) triggerPhase('shuffle');
+            mapDone++;
+            // print if in indexer
+            if (configuration.map.name === 'indexMapper') {
+              // @ts-ignore
+              console.log(`[mr] Map phase: ${mapDone}/${nodeCount} nodes done`);
+            }
+            if (mapDone === nodeCount) {
+              // console.log('[mr] Map phase complete, starting shuffle');
+              triggerPhase('shuffle');
+            }
           } else if (phase === 'shuffle') {
-            if (++shuffleDone === nodeCount) triggerPhase('reduce');
+            shuffleDone++;
+            if (configuration.reduce.name === 'indexReducer') {
+              // @ts-ignore
+              console.log(`[mr] Shuffle phase: ${shuffleDone}/${nodeCount} nodes done`);
+            }
+            if (shuffleDone === nodeCount) {
+              // console.log('[mr] Shuffle phase complete, starting reduce');
+              triggerPhase('reduce');
+            }
           } else if (phase === 'reduce') {
             if (Array.isArray(data)) reduceResults.push(...data);
-            if (++reduceDone === nodeCount) doCleanup();
+            reduceDone++;
+            if (configuration.reduce.name === 'indexReducer') {
+              // @ts-ignore
+              console.log(`[mr] Reduce phase: ${reduceDone}/${nodeCount} nodes done (${reduceResults.length} results so far)`);
+            }
+            // console.log(`[mr] Reduce phase: ${reduceDone}/${nodeCount} nodes done (${reduceResults.length} results so far)`);
+            if (reduceDone === nodeCount) {
+              // console.log(`[mr] Reduce phase complete, ${reduceResults.length} total results`);
+              doCleanup();
+            }
           }
         },
       };
@@ -157,33 +183,40 @@ function mr(config) {
               const groupNodes = Object.values(group);
               const nids = groupNodes.map((n) => id.getNID(n));
 
-              const pairs = [];
+              // Build a NID→node lookup to avoid re-hashing nodes
+              const nidToNode = {};
+              for (let i = 0; i < groupNodes.length; i++) {
+                nidToNode[nids[i]] = groupNodes[i];
+              }
+
+              // Bucket pairs by target node
+              const buckets = {}; // nid -> [{key, value}]
               outputs.forEach((obj) => {
                 if (obj && typeof obj === 'object') {
                   for (const [k, v] of Object.entries(obj)) {
-                    pairs.push({key: k, value: v});
+                    const kid = id.getID(k);
+                    const targetNid = id.naiveHash(kid, nids);
+                    if (!buckets[targetNid]) buckets[targetNid] = [];
+                    buckets[targetNid].push({key: k, value: v});
                   }
                 }
               });
 
-              if (pairs.length === 0) {
+              const nidKeys = Object.keys(buckets);
+              if (nidKeys.length === 0) {
                 return local.comm.send(
                     ['shuffle', null],
                     {node: coordNode, service: coordSvc, method: 'notify'},
                     () => cb(null, 'ok'));
               }
 
-              let left = pairs.length;
-              pairs.forEach(({key, value}) => {
-                const kid = id.getID(key);
-                const targetNid = id.naiveHash(kid, nids);
-                const targetNode = groupNodes.find(
-                    (n) => id.getNID(n) === targetNid,
-                );
-
+              // One RPC per target node with all its pairs
+              let left = nidKeys.length;
+              nidKeys.forEach((nid) => {
+                const targetNode = nidToNode[nid];
                 local.comm.send(
-                    [value, {key, gid: shuffleGid}],
-                    {node: targetNode, service: 'mem', method: 'append'},
+                    [buckets[nid], shuffleGid],
+                    {node: targetNode, service: 'mem', method: 'batchAppend'},
                     () => {
                       if (--left === 0) {
                         local.comm.send(
@@ -202,6 +235,7 @@ function mr(config) {
           if (typeof cb !== 'function') cb = () => {};
           const local = globalThis.distribution.local;
 
+          // @ts-ignore
           local.mem.get({key: null, gid: shuffleGid}, (e, keys) => {
             if (!keys || keys.length === 0) {
               return local.comm.send(

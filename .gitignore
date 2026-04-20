@@ -15,3 +15,7 @@ dist
 stencil
 .npm-cache
 node_modules/
+
+# benchmarking
+
+results

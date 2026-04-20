@@ -150,6 +150,7 @@ function buildIndex(config, callback) {
     }
 
     const url = (typeof value === 'object' && value.url) ? value.url : key;
+    console.log(`[worker:index] ${url} — ${Object.keys(tf).length} unique stems`);
     const results = [];
     for (const [term, count] of Object.entries(tf)) {
       if (term.length > 0) {

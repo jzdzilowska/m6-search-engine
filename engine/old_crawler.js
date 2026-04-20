@@ -3,7 +3,7 @@ const http = require('http');
 const https = require('https');
 const {URL} = require('url');
 
-const BATCH_SIZE = 1000;
+const BATCH_SIZE = 500;
 const FETCH_TIMEOUT = 2500;// 1 second
 const MAX_BODY = 5 * 1024 * 1024; // 5 MB
 
@@ -142,6 +142,7 @@ function crawl(config, callback) {
     if (!value || !value.html) return [];
     const url = value.url || '';
     const html = value.html;
+    console.log(`[worker:crawl] mapping ${url} (${html.length} bytes)`);
 
     // Strip scripts/styles then tags → plain text
     let text = html

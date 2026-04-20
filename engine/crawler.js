@@ -23,6 +23,12 @@ function crawl(config, callback) {
   const crawlGid = config.groupName || 'crawl';
   const batchSize = config.batchSize || BATCH_SIZE;
 
+  /* Restrict crawl to seed domains */
+  const seedDomains = new Set();
+  for (const s of config.seeds) {
+    try { seedDomains.add(new URL(s).hostname); } catch (e) { /* */ }
+  }
+
   let visited = new Set();
   let queued = new Set(config.seeds);
   let frontier = [...config.seeds];
@@ -114,7 +120,7 @@ function crawl(config, callback) {
       return done(null, null);
     }
     req.on('error', (err) => {
-      console.error(`[crawler]   request error ${pageUrl}: ${err.message}`);
+      console.error(`[crawler]   request error ${pageUrl}: ${err.code || err.message || err}`);
       done(null, null);
     });
     req.on('timeout', () => {
@@ -308,9 +314,13 @@ function crawl(config, callback) {
                 totalCrawled++;
               }
 
-              /* Add outlinks to frontier */
+              /* Add outlinks to frontier (same-domain only) */
               for (const link of newLinks) {
                 if (!visited.has(link) && !queued.has(link)) {
+                  try {
+                    const h = new URL(link).hostname;
+                    if (!seedDomains.has(h)) continue;
+                  } catch (e) { continue; }
                   queued.add(link);
                   frontier.push(link);
                 }

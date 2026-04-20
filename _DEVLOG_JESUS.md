@@ -6,7 +6,9 @@
 node engine/run.js --seeds "https://en.wikipedia.org/wiki/Computer_science" --maxPages 100000 --nodes 5 --clean
 
 # running previously successful pipeline to access query on old data
-node engine/run.js --seeds "https://en.wikipedia.org/wiki/Computer_science" --maxPages 1000 --nodes 5 --skipCrawl --skipIndex 
+node engine/run.js --seeds "https://en.wikipedia.org/wiki/Computer_science" --maxPages 400 --nodes 30 
+
+--skipCrawl --skipIndex 
 
 # kill ports
 for port in $(seq 7110 7144); do lsof -ti:$port | xargs -r kill -9; done

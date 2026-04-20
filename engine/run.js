@@ -183,10 +183,18 @@ function startCoordinator() {
 
         if (args.skipCrawl) {
           console.log('[coordinator] Skipping crawl (--skipCrawl)');
-          dist['crawl'].store.get('__crawler_state__', (e, state) => {
-            const urls = (state && state.crawledUrls) ? state.crawledUrls : [];
-            console.log(`[coordinator] Recovered ${urls.length} crawled URL(s) from state`);
-            return runIndexPhase(dist, urls);
+          // Recover URLs from chunked storage (new format) or legacy state
+          loadCrawledUrlChunks(dist, 'crawl', (urls) => {
+            if (urls.length > 0) {
+              console.log(`[coordinator] Recovered ${urls.length} crawled URL(s)`);
+              return runIndexPhase(dist, urls);
+            }
+            // Fallback: try legacy __crawler_state__ format
+            dist['crawl'].store.get('__crawler_state__', (e, state) => {
+              const legacy = (state && state.crawledUrls) ? state.crawledUrls : [];
+              console.log(`[coordinator] Recovered ${legacy.length} URL(s) (legacy)`);
+              return runIndexPhase(dist, legacy);
+            });
           });
           return;
         }
@@ -221,7 +229,7 @@ function startCoordinator() {
 /* ------------------------------------------------------------------ */
 
 function runCrawlPhase(dist, seeds) {
-  const {crawl} = require('./old_crawler');
+  const {crawl} = require('./crawler');
   crawl({
     seeds,
     maxPages: args.maxPages,
@@ -310,4 +318,20 @@ function registerGroups(dist, names, group, idx, cb) {
       registerGroups(dist, names, group, idx + 1, cb);
     });
   });
+}
+
+function loadCrawledUrlChunks(dist, gid, cb) {
+  const URL_LIST_KEY = '__crawled_urls__';
+  const allUrls = [];
+  let idx = 0;
+  function loadNext() {
+    const key = URL_LIST_KEY + ':' + idx;
+    dist[gid].store.get(key, (e, chunk) => {
+      if (e || !chunk || !Array.isArray(chunk)) return cb(allUrls);
+      allUrls.push(...chunk);
+      idx += chunk.length;
+      loadNext();
+    });
+  }
+  loadNext();
 }

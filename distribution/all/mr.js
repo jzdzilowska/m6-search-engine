@@ -252,6 +252,23 @@ function mr(config) {
             });
           });
         },
+
+        cleanup: function(mapGid, shuffleGid, cb) {
+          if (typeof cb !== 'function') cb = () => {};
+          const local = globalThis.distribution.local;
+          // Delete map results and shuffle data from in-memory store
+          local.mem.del({key: 'mapResults', gid: mapGid}, () => {
+            local.mem.get({key: null, gid: shuffleGid}, (e, keys) => {
+              if (!keys || keys.length === 0) return cb(null, 'ok');
+              let left = keys.length;
+              keys.forEach((sk) => {
+                local.mem.del({key: sk, gid: shuffleGid}, () => {
+                  if (--left === 0) cb(null, 'ok');
+                });
+              });
+            });
+          });
+        },
       };
 
       /* phase triggering */
@@ -288,12 +305,31 @@ function mr(config) {
         }
       }
 
-      /* deregister services and return results */
+      /* deregister services and free shuffle memory, then return results */
       function doCleanup() {
-        globalThis.distribution[gid].routes.rem(mrServiceName, () => {
-          globalThis.distribution.local.routes.rem(coordServiceName, () => {
-            callback(null, reduceResults);
+        // Free in-memory shuffle data on every node to prevent OOM on large jobs
+        const local = globalThis.distribution.local;
+        let cleaned = 0;
+        const cleanupNodes = nodes.length;
+
+        function afterClean() {
+          globalThis.distribution[gid].routes.rem(mrServiceName, () => {
+            local.routes.rem(coordServiceName, () => {
+              callback(null, reduceResults);
+            });
           });
+        }
+
+        if (cleanupNodes === 0) return afterClean();
+
+        nodes.forEach((node) => {
+          local.comm.send(
+              [mapGid, shuffleGid],
+              {node, service: mrServiceName, method: 'cleanup'},
+              () => {
+                if (++cleaned === cleanupNodes) afterClean();
+              },
+          );
         });
       }
 

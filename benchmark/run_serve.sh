@@ -8,7 +8,28 @@
 set -e
 
 # ─── Configuration (edit these) ──────────────────────────────────────
-SEEDS="https://en.wikipedia.org/wiki/Computer_science"
+SEEDS=$(cat <<'EOF' | tr '\n' ',' | sed 's/,$//'
+https://en.wikipedia.org/wiki/Computer_science
+https://en.wikipedia.org/wiki/Category:Lists_of_artificial_objects_sent_into_space
+https://en.wikipedia.org/wiki/Category:Lists_of_automobile-related_articles
+https://en.wikipedia.org/wiki/Category:Lists_of_automobiles_by_performance
+https://en.wikipedia.org/wiki/Category:Lists_of_computers
+https://en.wikipedia.org/wiki/Category:Lists_of_microcomputers
+https://en.wikipedia.org/wiki/Category:Lists_of_mobile_computers
+https://en.wikipedia.org/wiki/Category:Lists_of_country_codes
+https://en.wikipedia.org/wiki/List_of_filename_extensions
+https://en.wikipedia.org/wiki/Category:Lists_of_locomotive_classes
+https://en.wikipedia.org/wiki/Category:Lists_of_mobile_phones
+https://en.wikipedia.org/wiki/Category:Lists_of_network_protocols
+https://en.wikipedia.org/wiki/Category:Lists_of_North_American_area_codes
+https://en.wikipedia.org/wiki/Lists_of_nuclear_disasters_and_radioactive_incidents
+https://en.wikipedia.org/wiki/List_of_programming_languages
+https://en.wikipedia.org/wiki/Category:Lists_of_software
+https://en.wikipedia.org/wiki/Category:Lists_of_websites
+https://en.wikipedia.org/wiki/List_of_emerging_technologies
+https://en.wikipedia.org/wiki/List_of_smartphones
+EOF
+)   
 MAX_PAGES=100000
 NODES=20
 BASE_PORT=7110

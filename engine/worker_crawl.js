@@ -1,29 +1,20 @@
 /**
  * Crawl-fetch service — registered locally on each worker at boot time.
  *
- * Because this module is require()'d directly by the worker process (never
- * serialized over RPC), all require() calls work normally.
- *
- * The coordinator sends batches of URLs via:
- *   comm.send([urls], {node, service: 'crawl-fetch', method: 'fetchBatch'}, cb)
- *
- * The service fetches each URL, extracts text + outlinks, stores the page in
- * the distributed crawl store, and returns {crawled, outlinks} to the caller.
+ * Workers only fetch + extract. They return page content to the coordinator,
+ * which handles distributed storage (the coordinator has groups properly
+ * registered and can reliably do distribution[gid].store.put).
  */
 
 const http = require('http');
 const https = require('https');
-const crypto = require('crypto');
 const {convert} = require('html-to-text');
 const {URL} = require('url');
 
 const FETCH_TIMEOUT = 15000;
 const MAX_BODY = 2 * 1024 * 1024;
 const MAX_TEXT = 30000;
-
-function urlKey(url) {
-  return crypto.createHash('sha256').update(url).digest('hex');
-}
+const BATCH_TIMEOUT = 20000;
 
 function fetchPage(pageUrl, cb) {
   let called = false;
@@ -115,40 +106,39 @@ function processPage(url, html) {
 }
 
 /**
- * Fetch a batch of URLs, extract content, store pages, return results.
- * Called by coordinator via RPC.
- *
- * @param {string[]} urls - URLs to fetch
- * @param {Function} cb - callback(err, {crawled: string[], outlinks: string[]})
+ * Fetch a batch of URLs, extract content, return results to coordinator.
+ * Storage is NOT done here — coordinator handles it.
  */
 function fetchBatch(urls, cb) {
-  if (!urls || urls.length === 0) return cb(null, {crawled: [], outlinks: []});
-
-  const distribution = globalThis.distribution;
-  const crawlGid = 'crawl';
+  if (!urls || urls.length === 0) return cb(null, {pages: [], outlinks: []});
 
   let pending = urls.length;
-  const crawled = [];
+  let finished = false;
+  const pages = [];
   const allOutlinks = [];
+
+  // Safety timeout — return whatever we have after BATCH_TIMEOUT
+  const timer = setTimeout(() => {
+    if (finished) return;
+    finished = true;
+    console.log(`[crawl-fetch] Batch timeout — returning ${pages.length}/${urls.length} pages`);
+    cb(null, {pages, outlinks: allOutlinks});
+  }, BATCH_TIMEOUT);
 
   urls.forEach((url) => {
     fetchPage(url, (e, html) => {
+      if (finished) return;
+
       if (html && html.length > 50) {
         const content = processPage(url, html);
-        crawled.push(content.url);
+        pages.push(content);
         allOutlinks.push(...content.outlinks);
+      }
 
-        const pk = urlKey(content.url);
-        distribution[crawlGid].store.put(content, pk, () => {
-          if (--pending === 0) {
-            cb(null, {crawled, outlinks: allOutlinks});
-          }
-        });
-      } else {
-        console.log(`[crawl-fetch] SKIP ${url} — ${html ? html.length + ' bytes (too short)' : 'no response'}`);
-        if (--pending === 0) {
-          cb(null, {crawled, outlinks: allOutlinks});
-        }
+      if (--pending === 0) {
+        finished = true;
+        clearTimeout(timer);
+        cb(null, {pages, outlinks: allOutlinks});
       }
     });
   });

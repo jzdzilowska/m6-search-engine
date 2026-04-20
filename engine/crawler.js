@@ -144,6 +144,9 @@ function crawl(config, callback) {
       return setImmediate(runWave);
     }
 
+    // Collect all pages from all workers, then store from coordinator
+    const allPages = [];
+
     workerBatches.forEach((subBatch, idx) => {
       if (subBatch.length === 0) return;
 
@@ -153,13 +156,9 @@ function crawl(config, callback) {
           {node: workerNode, service: 'crawl-fetch', method: 'fetchBatch'},
           (e, result) => {
             if (!e && result) {
-              // Process crawled URLs
-              if (result.crawled && result.crawled.length > 0) {
-                crawledUrlsBuf.push(...result.crawled);
-                totalCrawled += result.crawled.length;
+              if (result.pages && result.pages.length > 0) {
+                allPages.push(...result.pages);
               }
-
-              // Process outlinks — deduplicate and add to frontier
               if (result.outlinks && result.outlinks.length > 0) {
                 for (const link of result.outlinks) {
                   const lh = quickHash(link);
@@ -174,19 +173,34 @@ function crawl(config, callback) {
             }
 
             if (++workersResponded === totalWorkersSent) {
-              // All workers done with this wave
-              const shouldFlush = crawledUrlsBuf.length >= 200;
-              const next = () => {
-                if (totalCrawled % 500 === 0 && totalCrawled > 0) {
-                  return saveState(() => setImmediate(runWave));
-                }
-                setImmediate(runWave);
-              };
-              if (shouldFlush) {
-                flushUrlBuffer(next);
-              } else {
-                next();
+              // All workers responded — now store pages from coordinator
+              if (allPages.length === 0) {
+                return setImmediate(runWave);
               }
+
+              let stored = 0;
+              allPages.forEach((content) => {
+                crawledUrlsBuf.push(content.url);
+                totalCrawled++;
+
+                const pk = urlKey(content.url);
+                distribution[crawlGid].store.put(content, pk, () => {
+                  if (++stored === allPages.length) {
+                    const shouldFlush = crawledUrlsBuf.length >= 200;
+                    const next = () => {
+                      if (totalCrawled % 500 === 0 && totalCrawled > 0) {
+                        return saveState(() => setImmediate(runWave));
+                      }
+                      setImmediate(runWave);
+                    };
+                    if (shouldFlush) {
+                      flushUrlBuffer(next);
+                    } else {
+                      next();
+                    }
+                  }
+                });
+              });
             }
           },
       );

@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS1380 M6 Poster — Distributed Search Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f5f5f7;
+    --surface2: #eeeef0;
+    --border: #d1d1d6;
+    --text: #1a1a1a;
+    --text-dim: #555555;
+    --accent-blue: #2563eb;
+    --accent-cyan: #0891b2;
+    --accent-green: #059669;
+    --accent-orange: #d97706;
+    --accent-pink: #db2777;
+    --accent-purple: #7c3aed;
+    --accent-red: #dc2626;
+    --accent-yellow: #ca8a04;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @page {
+    size: 40in 60in;
+    margin: 0;
+  }
+  html, body {
+  width: 40in;
+  height: 60in;
+  margin: 0;
+}
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    width: 40in;
+    height: 60in;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Subtle grid texture */
+  body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 80px 80px;
+    opacity: 0.15;
+    pointer-events: none;
+  }
+
+  .poster {
+    width: 100%;
+    height: 100%;
+    padding: 1.5in;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 0.6in;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 0.6in;
+    border-bottom: 4px solid var(--accent-blue);
+    gap: 0.8in;
+  }
+
+  .header-left { flex: 1; }
+
+  .course-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.36in;
+    font-weight: 500;
+    color: var(--accent-cyan);
+    background: rgba(8, 145, 178, 0.08);
+    border: 1px solid rgba(8, 145, 178, 0.25);
+    padding: 0.1in 0.3in;
+    border-radius: 6px;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.25in;
+  }
+
+  .title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 800;
+    font-size: 2in;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #1a1a1a 30%, var(--accent-blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.2in;
+  }
+
+  .subtitle {
+    font-size: 0.5in;
+    color: var(--text-dim);
+    font-weight: 400;
+    max-width: 28in;
+    line-height: 1.4;
+  }
+
+  .header-right {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .author-name {
+    font-size: 0.6in;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.08in;
+  }
+
+  .author-info {
+    font-size: 0.38in;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── SECTION CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 0.6in;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 5px;
+  }
+
+  .card-blue::before { background: var(--accent-blue); }
+  .card-cyan::before { background: var(--accent-cyan); }
+  .card-green::before { background: var(--accent-green); }
+  .card-orange::before { background: var(--accent-orange); }
+  .card-pink::before { background: var(--accent-pink); }
+  .card-purple::before { background: var(--accent-purple); }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.28in;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.25in;
+  }
+
+  .label-blue { color: var(--accent-blue); }
+  .label-cyan { color: var(--accent-cyan); }
+  .label-green { color: var(--accent-green); }
+  .label-orange { color: var(--accent-orange); }
+  .label-pink { color: var(--accent-pink); }
+  .label-purple { color: var(--accent-purple); }
+
+  .section-title {
+    font-size: 0.65in;
+    font-weight: 700;
+    margin-bottom: 0.3in;
+    line-height: 1.2;
+  }
+
+  .section-text {
+    font-size: 0.36in;
+    line-height: 1.6;
+    color: var(--text-dim);
+  }
+
+  /* ── ARCHITECTURE (spans full width, row 2) ── */
+  .arch-section {
+    grid-column: 1 / -1;
+  }
+
+  .arch-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3in;
+    margin-top: 0.3in;
+  }
+
+  .arch-layer {
+    display: flex;
+    align-items: center;
+    gap: 0.3in;
+  }
+
+  .arch-layer-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.28in;
+    color: var(--text-dim);
+    width: 3in;
+    text-align: right;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .arch-boxes {
+    display: flex;
+    gap: 0.25in;
+    flex: 1;
+  }
+
+  .arch-box {
+    flex: 1;
+    padding: 0.35in 0.4in;
+    border-radius: 10px;
+    font-size: 0.34in;
+    font-weight: 600;
+    text-align: center;
+    border: 2px solid;
+    position: relative;
+  }
+
+  .arch-box small {
+    display: block;
+    font-weight: 400;
+    font-size: 0.24in;
+    margin-top: 0.06in;
+    opacity: 0.7;
+  }
+
+  .box-blue { background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.3); color: var(--accent-blue); }
+  .box-cyan { background: rgba(8,145,178,0.08); border-color: rgba(8,145,178,0.3); color: var(--accent-cyan); }
+  .box-green { background: rgba(5,150,105,0.08); border-color: rgba(5,150,105,0.3); color: var(--accent-green); }
+  .box-orange { background: rgba(217,119,6,0.08); border-color: rgba(217,119,6,0.3); color: var(--accent-orange); }
+  .box-purple { background: rgba(124,58,237,0.08); border-color: rgba(124,58,237,0.3); color: var(--accent-purple); }
+  .box-pink { background: rgba(219,39,119,0.08); border-color: rgba(219,39,119,0.3); color: var(--accent-pink); }
+
+  .arch-connector {
+    width: 3in;
+    flex-shrink: 0;
+  }
+
+  .arch-arrow {
+    display: flex;
+    justify-content: center;
+    padding: 0.06in 0;
+  }
+
+  .arch-arrow svg {
+    width: 0.5in;
+    height: 0.5in;
+  }
+
+  /* ── MILESTONE TIMELINE ── */
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3in;
+    margin-top: 0.25in;
+  }
+
+  .milestone-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25in;
+  }
+
+  .ms-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.3in;
+    font-weight: 700;
+    width: 0.9in;
+    height: 0.9in;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .ms-content {
+    flex: 1;
+  }
+
+  .ms-name {
+    font-size: 0.36in;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.04in;
+  }
+
+  .ms-desc {
+    font-size: 0.28in;
+    color: var(--text-dim);
+  }
+
+  .ms-stat {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.28in;
+    color: var(--text-dim);
+    text-align: right;
+    flex-shrink: 0;
+    min-width: 1.4in;
+  }
+
+  /* ── BENCHMARKS ── */
+  .bench-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35in;
+    margin-top: 0.25in;
+  }
+
+  .bench-item {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 0.4in;
+  }
+
+  .bench-metric {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75in;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.1in;
+  }
+
+  .bench-label {
+    font-size: 0.28in;
+    color: var(--text-dim);
+    line-height: 1.3;
+  }
+
+  .bench-context {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.22in;
+    color: var(--text-dim);
+    opacity: 0.6;
+    margin-top: 0.06in;
+  }
+
+  /* ── BAR CHART ── */
+  .bar-chart {
+    margin-top: 0.2in;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.2in;
+    gap: 0.2in;
+  }
+
+  .bar-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.26in;
+    color: var(--text-dim);
+    width: 2.8in;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 0.5in;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.15in;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.22in;
+    font-weight: 600;
+    color: white;
+    min-width: 1in;
+  }
+
+  .bar-fill-blue { background: linear-gradient(90deg, rgba(37,99,235,0.4), var(--accent-blue)); }
+  .bar-fill-cyan { background: linear-gradient(90deg, rgba(8,145,178,0.4), var(--accent-cyan)); }
+  .bar-fill-green { background: linear-gradient(90deg, rgba(5,150,105,0.4), var(--accent-green)); }
+  .bar-fill-orange { background: linear-gradient(90deg, rgba(217,119,6,0.4), var(--accent-orange)); }
+  .bar-fill-purple { background: linear-gradient(90deg, rgba(124,58,237,0.4), var(--accent-purple)); }
+
+  /* ── MAPREDUCE PIPELINE ── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0.2in;
+    margin-top: 0.35in;
+  }
+
+  .pipeline-phase {
+    flex: 1;
+    text-align: center;
+    padding: 0.4in 0.25in;
+    border-radius: 10px;
+  }
+
+  .pipeline-phase-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.36in;
+    font-weight: 700;
+    margin-bottom: 0.1in;
+  }
+
+  .pipeline-phase-desc {
+    font-size: 0.26in;
+    opacity: 0.7;
+  }
+
+  .pipeline-arrow {
+    font-size: 0.5in;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+  /* ── COMPONENT TABLE ── */
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.25in;
+    font-size: 0.3in;
+  }
+
+  .comp-table th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.24in;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    text-align: left;
+    padding: 0.18in 0.2in;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comp-table th:last-child,
+  .comp-table td:last-child {
+    text-align: right;
+  }
+
+  .comp-table td {
+    padding: 0.18in 0.2in;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    color: var(--text);
+  }
+
+  .comp-table td:last-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    color: var(--accent-cyan);
+  }
+
+  .comp-module {
+    font-weight: 600;
+  }
+
+  .comp-desc {
+    font-size: 0.26in;
+    color: var(--text-dim);
+  }
+
+  /* ── TECH STACK PILLS ── */
+  .tech-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.18in;
+    margin-top: 0.25in;
+  }
+
+  .tech-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.28in;
+    padding: 0.14in 0.3in;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  /* ── LATENCY COMPARISON ── */
+  .latency-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.25in;
+    font-size: 0.3in;
+  }
+
+  .latency-table th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.24in;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 0.15in 0.18in;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .latency-table th:first-child { text-align: left; }
+
+  .latency-table td {
+    padding: 0.15in 0.18in;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.28in;
+  }
+
+  .latency-table td:first-child {
+    text-align: left;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .val-local { color: var(--accent-cyan); }
+  .val-aws { color: var(--accent-orange); }
+
+  /* ── FOOTER ── */
+  .footer {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0.4in;
+    border-top: 2px solid var(--border);
+  }
+
+  .footer-left {
+    font-size: 0.32in;
+    color: var(--text-dim);
+  }
+
+  .footer-right {
+    display: flex;
+    align-items: center;
+    gap: 0.4in;
+  }
+
+  .footer-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.28in;
+    color: var(--text-dim);
+    padding: 0.1in 0.25in;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  /* ── KEY CHALLENGES ── */
+  .challenge-item {
+    margin-bottom: 0.3in;
+  }
+  .challenge-item:last-child { margin-bottom: 0; }
+
+  .challenge-title {
+    font-size: 0.34in;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.08in;
+  }
+
+  .challenge-desc {
+    font-size: 0.28in;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── STAT CALLOUTS ── */
+  .stat-row {
+    display: flex;
+    gap: 0.3in;
+    margin-top: 0.25in;
+  }
+
+  .stat-item {
+    flex: 1;
+    text-align: center;
+    padding: 0.3in;
+    background: var(--surface2);
+    border-radius: 10px;
+  }
+
+  .stat-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6in;
+    font-weight: 700;
+    color: var(--accent-blue);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.24in;
+    color: var(--text-dim);
+    margin-top: 0.08in;
+  }
+</style>
+</head>
+<body>
+
+<div class="poster">
+
+  <!-- ══════════ HEADER ══════════ -->
+  <div class="header">
+    <div class="header-left">
+      <div class="course-tag">CS1380 : 2026 : M6 — Cloud Deployment</div>
+      <div class="title">Distributed Search Engine</div>
+      <div class="subtitle">A progressively-built, MapReduce-powered search engine deployed on AWS EC2 — from single-machine crawling to fully distributed indexing and retrieval.</div>
+    </div>
+    <div class="header-right">
+      <div class="author-name">Julia Zdzilowska and Jesus Rodriguez</div>
+      <div class="author-info">
+        Brown University<br>
+        Department of Computer Science<br>
+        Spring 2026
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ ARCHITECTURE (full width) ══════════ -->
+  <div class="card card-blue arch-section">
+    <div class="section-label label-blue">01 — System Overview</div>
+    <div class="section-title">End-to-End Architecture</div>
+    <div class="section-text" style="margin-bottom: 0.15in;">
+      The system is structured in layers: application-level search components communicate through a group-based distributed services framework, backed by persistent and in-memory storage, all running on AWS EC2 nodes.
+    </div>
+
+    <div class="arch-diagram">
+      <!-- Application Layer -->
+      <div class="arch-layer">
+        <div class="arch-layer-label">Application</div>
+        <div class="arch-boxes">
+          <div class="arch-box box-blue">Crawler<small>HTML fetch + link extraction</small></div>
+          <div class="arch-box box-blue">Indexer<small>TF-IDF + inverted index</small></div>
+          <div class="arch-box box-blue">PageRank<small>Iterative link analysis</small></div>
+          <div class="arch-box box-blue">Query Engine<small>Web + CLI interface</small></div>
+        </div>
+      </div>
+
+      <div class="arch-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+
+      <!-- Execution Layer -->
+      <div class="arch-layer">
+        <div class="arch-layer-label">Execution</div>
+        <div class="arch-boxes">
+          <div class="arch-box box-purple" style="flex: 2;">MapReduce Orchestrator<small>3-phase: Map → Shuffle → Reduce</small></div>
+          <div class="arch-box box-purple">Group Comm<small>Fan-out / gather</small></div>
+          <div class="arch-box box-purple">Gossip Protocol<small>Membership dissemination</small></div>
+        </div>
+      </div>
+
+      <div class="arch-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+
+      <!-- Services Layer -->
+      <div class="arch-layer">
+        <div class="arch-layer-label">Services</div>
+        <div class="arch-boxes">
+          <div class="arch-box box-cyan">RPC / Serialization<small>HTTP-based remote calls</small></div>
+          <div class="arch-box box-cyan">Node Management<small>Spawn, stop, status</small></div>
+          <div class="arch-box box-cyan">Routing<small>Service → handler registry</small></div>
+        </div>
+      </div>
+
+      <div class="arch-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+
+      <!-- Storage Layer -->
+      <div class="arch-layer">
+        <div class="arch-layer-label">Storage</div>
+        <div class="arch-boxes">
+          <div class="arch-box box-green">Persistent KV Store<small>File-backed, per-node/group</small></div>
+          <div class="arch-box box-green">In-Memory Store<small>Ephemeral, fast access</small></div>
+          <div class="arch-box box-green">Distributed Store<small>Sharded across nodes</small></div>
+        </div>
+      </div>
+
+      <div class="arch-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+
+      <!-- Infrastructure -->
+      <div class="arch-layer">
+        <div class="arch-layer-label">Infrastructure</div>
+        <div class="arch-boxes">
+          <div class="arch-box box-orange" style="flex: 1;">EC2 Node</div>
+          <div class="arch-box box-orange" style="flex: 1;">EC2 Node</div>
+          <div class="arch-box box-orange" style="flex: 1;">EC2 Node</div>
+          <div class="arch-box box-orange" style="flex: 0.5; opacity: 0.5; border-style: dashed;">···</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ COLUMN 1: Milestones + MapReduce ══════════ -->
+  <div style="display: flex; flex-direction: column; gap: 0.6in;">
+
+    <!-- Milestones -->
+    <div class="card card-cyan">
+      <div class="section-label label-cyan">02 — Progressive Build</div>
+      <div class="section-title">Milestone Progression</div>
+
+      <div class="timeline">
+        <div class="milestone-row">
+          <div class="ms-badge box-blue">M0</div>
+          <div class="ms-content">
+            <div class="ms-name">Single-Machine Search</div>
+            <div class="ms-desc">Crawler, indexer, query engine — no distribution</div>
+          </div>
+          <div class="ms-stat">279 LoC</div>
+        </div>
+
+        <div class="milestone-row">
+          <div class="ms-badge box-cyan">M1</div>
+          <div class="ms-content">
+            <div class="ms-name">Serialization</div>
+            <div class="ms-desc">Cross-network object transmission with function support</div>
+          </div>
+          <div class="ms-stat">185 LoC</div>
+        </div>
+
+        <div class="milestone-row">
+          <div class="ms-badge box-green">M2</div>
+          <div class="ms-content">
+            <div class="ms-name">Communication</div>
+            <div class="ms-desc">HTTP-based RPC, node spawning, remote invocation</div>
+          </div>
+          <div class="ms-stat">593 LoC</div>
+        </div>
+
+        <div class="milestone-row">
+          <div class="ms-badge box-purple">M3</div>
+          <div class="ms-content">
+            <div class="ms-name">Groups & Gossip</div>
+            <div class="ms-desc">Group membership, gossip protocol, fan-out/gather</div>
+          </div>
+          <div class="ms-stat">250 LoC</div>
+        </div>
+
+        <div class="milestone-row">
+          <div class="ms-badge box-orange">M4</div>
+          <div class="ms-content">
+            <div class="ms-name">Distributed Storage</div>
+            <div class="ms-desc">Persistent & in-memory KV stores, sharding by group</div>
+          </div>
+          <div class="ms-stat">1,649 LoC</div>
+        </div>
+
+        <div class="milestone-row">
+          <div class="ms-badge box-pink">M5</div>
+          <div class="ms-content">
+            <div class="ms-name">MapReduce</div>
+            <div class="ms-desc">Distributed execution with Map → Shuffle → Reduce pipeline</div>
+          </div>
+          <div class="ms-stat">1,899 LoC</div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-item">
+          <div class="stat-num">~14K</div>
+          <div class="stat-label">Total Lines of Code</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">59</div>
+          <div class="stat-label">Hours of Development</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">5</div>
+          <div class="stat-label">Milestones Integrated</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MapReduce Pipeline -->
+    <div class="card card-purple">
+      <div class="section-label label-purple">03 — Execution Model</div>
+      <div class="section-title">MapReduce Pipeline</div>
+      <div class="section-text">The coordinator registers ephemeral services across all group nodes, serializes mapper/reducer functions, and orchestrates three synchronized phases:</div>
+
+      <div class="pipeline">
+        <div class="pipeline-phase box-blue">
+          <div class="pipeline-phase-name">MAP</div>
+          <div class="pipeline-phase-desc">Each node processes<br>assigned keys in parallel</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-phase box-purple">
+          <div class="pipeline-phase-name">SHUFFLE</div>
+          <div class="pipeline-phase-desc">Consistent hashing<br>redistributes data</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-phase box-green">
+          <div class="pipeline-phase-name">REDUCE</div>
+          <div class="pipeline-phase-desc">Nodes aggregate<br>and emit results</div>
+        </div>
+      </div>
+
+      <div class="section-text" style="margin-top: 0.3in; font-size: 0.3in;">
+        <strong style="color: var(--text);">Synchronization:</strong> Coordinator tracks completion per phase via <span style="font-family: 'JetBrains Mono'; color: var(--accent-purple);">notify</span> callbacks — advances only when all nodes confirm. Functions are serialized and shipped to remote nodes for local execution.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ COLUMN 2: Performance ══════════ -->
+  <div style="display: flex; flex-direction: column; gap: 0.6in;">
+
+    <!-- Key Benchmarks -->
+    <div class="card card-green">
+      <div class="section-label label-green">04 — Performance</div>
+      <div class="section-title">Key Benchmarks</div>
+
+      <div class="bench-grid">
+        <div class="bench-item">
+          <div class="bench-metric" style="color: var(--accent-cyan);">14,250</div>
+          <div class="bench-label">Requests/sec (parallel RPC)</div>
+          <div class="bench-context">Local, M2</div>
+        </div>
+        <div class="bench-item">
+          <div class="bench-metric" style="color: var(--accent-green);">1,393</div>
+          <div class="bench-label">Store ops/sec</div>
+          <div class="bench-context">Local, M4</div>
+        </div>
+        <div class="bench-item">
+          <div class="bench-metric" style="color: var(--accent-orange);">111.6</div>
+          <div class="bench-label">Docs/sec (MapReduce)</div>
+          <div class="bench-context">Local, M5</div>
+        </div>
+        <div class="bench-item">
+          <div class="bench-metric" style="color: var(--accent-purple);">44.8<span style="font-size: 0.4in;">ms</span></div>
+          <div class="bench-label">MapReduce latency/run</div>
+          <div class="bench-context">Local, M5</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Latency: Local vs AWS -->
+    <div class="card card-orange">
+      <div class="section-label label-orange">05 — Local vs. AWS EC2</div>
+      <div class="section-title">Latency Comparison</div>
+
+      <table class="latency-table">
+        <thead>
+          <tr>
+            <th style="text-align: left;">Operation</th>
+            <th>Local (Apple M2)</th>
+            <th>AWS EC2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Serialization (complex)</td>
+            <td class="val-local">44.28 μs</td>
+            <td class="val-aws">61.83 μs</td>
+          </tr>
+          <tr>
+            <td>RPC round-trip</td>
+            <td class="val-local">~0.07 ms</td>
+            <td class="val-aws">~0.36 ms</td>
+          </tr>
+          <tr>
+            <td>Node spawn</td>
+            <td class="val-local">97.99 ms</td>
+            <td class="val-aws">146.49 ms</td>
+          </tr>
+          <tr>
+            <td>KV Store put</td>
+            <td class="val-local">2.12 ms</td>
+            <td class="val-aws">1.29 ms</td>
+          </tr>
+          <tr>
+            <td>KV Store get</td>
+            <td class="val-local">0.72 ms</td>
+            <td class="val-aws">0.89 ms</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="section-text" style="margin-top: 0.25in; font-size: 0.28in;">
+        AWS latency is comparable to local for I/O-bound operations (KV store) but shows network overhead for RPC-heavy workloads. Storage ops benefit from EC2's optimized disk I/O.
+      </div>
+    </div>
+
+    <!-- Throughput by Milestone -->
+    <div class="card card-pink">
+      <div class="section-label label-pink">06 — Throughput by Milestone</div>
+      <div class="section-title">Lines of Code Contributed</div>
+
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">M0 Search</div>
+          <div class="bar-track"><div class="bar-fill bar-fill-blue" style="width: 15%;">279</div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">M1 Serialization</div>
+          <div class="bar-track"><div class="bar-fill bar-fill-cyan" style="width: 10%;">185</div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">M2 Communication</div>
+          <div class="bar-track"><div class="bar-fill bar-fill-green" style="width: 31%;">593</div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">M3 Groups</div>
+          <div class="bar-track"><div class="bar-fill bar-fill-purple" style="width: 13%;">250</div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">M4 Storage</div>
+          <div class="bar-track"><div class="bar-fill bar-fill-orange" style="width: 87%;">1,649</div></div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">M5 MapReduce</div>
+          <div class="bar-track"><div class="bar-fill bar-fill-blue" style="width: 100%;">1,899</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ COLUMN 3: Components + Challenges + Tech ══════════ -->
+  <div style="display: flex; flex-direction: column; gap: 0.6in;">
+
+    <!-- Component Breakdown -->
+    <div class="card card-cyan">
+      <div class="section-label label-cyan">07 — Components</div>
+      <div class="section-title">Module Breakdown</div>
+
+      <table class="comp-table">
+        <thead>
+          <tr><th>Module</th><th>Role</th><th>LoC</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="comp-module">local/node.js</td>
+            <td class="comp-desc">HTTP server, request routing</td>
+            <td>~200</td>
+          </tr>
+          <tr>
+            <td class="comp-module">local/store.js</td>
+            <td class="comp-desc">File-backed persistent KV</td>
+            <td>~160</td>
+          </tr>
+          <tr>
+            <td class="comp-module">local/comm.js</td>
+            <td class="comp-desc">RPC client, error handling</td>
+            <td>~120</td>
+          </tr>
+          <tr>
+            <td class="comp-module">all/mr.js</td>
+            <td class="comp-desc">MapReduce orchestrator</td>
+            <td>~250</td>
+          </tr>
+          <tr>
+            <td class="comp-module">all/comm.js</td>
+            <td class="comp-desc">Fan-out/gather broadcast</td>
+            <td>~150</td>
+          </tr>
+          <tr>
+            <td class="comp-module">util/serialization.js</td>
+            <td class="comp-desc">Object/function serializer</td>
+            <td>185</td>
+          </tr>
+          <tr>
+            <td class="comp-module">non-dist/merge.js</td>
+            <td class="comp-desc">Inverted index merger</td>
+            <td>171</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Key Challenges -->
+    <div class="card card-orange">
+      <div class="section-label label-orange">08 — Challenges & Solutions</div>
+      <div class="section-title">Key Technical Decisions</div>
+
+      <div class="challenge-item">
+        <div class="challenge-title">Serializing Functions Across the Wire</div>
+        <div class="challenge-desc">MapReduce requires shipping mapper/reducer functions to remote nodes. Built a recursive serializer handling closures, special values (NaN, Infinity), nested objects, and Date/Error types.</div>
+      </div>
+
+      <div class="challenge-item">
+        <div class="challenge-title">MapReduce Phase Synchronization</div>
+        <div class="challenge-desc">Coordinator must wait for all nodes to complete each phase before advancing. Implemented a notify-based callback barrier with ephemeral service registration/deregistration per job.</div>
+      </div>
+
+      <div class="challenge-item">
+        <div class="challenge-title">Consistent Hash-Based Shuffle</div>
+        <div class="challenge-desc">During shuffle, all nodes must agree on data routing. Used deterministic consistent hashing on keys to ensure symmetric placement across the cluster.</div>
+      </div>
+
+      <div class="challenge-item">
+        <div class="challenge-title">Group-Scoped Service Isolation</div>
+        <div class="challenge-desc">Every service is scoped to a named group, enabling multiple independent clusters (e.g., crawler group, indexer group) on the same physical nodes.</div>
+      </div>
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="card card-green">
+      <div class="section-label label-green">09 — Stack & Environment</div>
+      <div class="section-title">Technology</div>
+
+      <div class="tech-pills">
+        <div class="tech-pill">Node.js</div>
+        <div class="tech-pill">JavaScript ES6+</div>
+        <div class="tech-pill">AWS EC2</div>
+        <div class="tech-pill">HTTP RPC</div>
+        <div class="tech-pill">Jest</div>
+        <div class="tech-pill">natural.js</div>
+        <div class="tech-pill">jsdom</div>
+        <div class="tech-pill">html-to-text</div>
+        <div class="tech-pill">yargs</div>
+      </div>
+
+      <div class="section-text" style="margin-top: 0.2in;">
+        <strong style="color: var(--text);">Dev environment:</strong> Apple M2, 16 GB RAM, 8 cores (local). Ubuntu on Amazon EC2 (deployed). All components tested both locally and on multi-node AWS clusters.
+      </div>
+
+      <div class="section-text" style="margin-top: 0.12in;">
+        <strong style="color: var(--text);">Testing:</strong> Comprehensive Jest suite with 4 tiers — unit tests, scenario tests (NCDC, TF-IDF, string matching), extra credit, and instructor-provided integration tests.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ FOOTER ══════════ -->
+  <div class="footer">
+    <div class="footer-left">
+      CS1380: Distributed Computer Systems — Brown University — Spring 2026
+    </div>
+    <div class="footer-right">
+      <div class="footer-badge">Node.js</div>
+      <div class="footer-badge">AWS EC2</div>
+      <div class="footer-badge">MapReduce</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

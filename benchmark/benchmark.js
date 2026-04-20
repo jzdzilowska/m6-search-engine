@@ -79,6 +79,11 @@ const args = require('yargs/yargs')(process.argv.slice(2))
       describe: 'Wipe all stored data before running',
       default: false,
     })
+    .option('ip', {
+      type: 'string',
+      describe: 'IP address for coordinator and workers (use private IP on AWS)',
+      default: '127.0.0.1',
+    })
     .help()
     .parse();
 
@@ -91,9 +96,11 @@ const numNodes = args.nodes;
 const basePort = args.basePort;
 const queryTerms = args.queryTerms.split(',').map((s) => s.trim()).filter(Boolean);
 
+const nodeIp = args.ip;
+
 const workerNodes = [];
 for (let i = 0; i < numNodes; i++) {
-  workerNodes.push({ip: '127.0.0.1', port: basePort + i});
+  workerNodes.push({ip: nodeIp, port: basePort + i});
 }
 
 /* ---- Unique output directory ---- */
@@ -193,7 +200,7 @@ if (args.clean) {
 
 markStart('total');
 
-const dist = distribution();
+const dist = distribution({ip: nodeIp, port: 1234});
 
 dist.node.start((e) => {
   if (e) {

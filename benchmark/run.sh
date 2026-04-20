@@ -23,6 +23,7 @@ WARMUP_QUERIES=2
 CLEAN=true          # wipe store before run
 SKIP_CRAWL=false
 SKIP_INDEX=false
+IP="127.0.0.1"     # use private IP on AWS
 # ─────────────────────────────────────────────────────────────────────
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -42,6 +43,7 @@ ARGS=(
   --queryTerms "${QUERY_TERMS[@]}"
   --queryRuns "$QUERY_RUNS"
   --warmupQueries "$WARMUP_QUERIES"
+  --ip "$IP"
 )
 [[ "$CLEAN" == "true" ]] && ARGS+=(--clean)
 [[ "$SKIP_CRAWL" == "true" ]] && ARGS+=(--skipCrawl)

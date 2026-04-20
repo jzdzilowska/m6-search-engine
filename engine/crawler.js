@@ -24,6 +24,7 @@ function crawl(config, callback) {
   const batchSize = config.batchSize || BATCH_SIZE;
 
   /* Restrict crawl to seed domains */
+  // AWS cant access foreign wikipedia pages so limit to english ones?
   const seedDomains = new Set();
   for (const s of config.seeds) {
     try { seedDomains.add(new URL(s).hostname); } catch (e) { /* */ }

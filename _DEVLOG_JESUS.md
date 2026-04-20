@@ -6,12 +6,13 @@
 node engine/run.js --seeds "https://en.wikipedia.org/wiki/Computer_science" --maxPages 100000 --nodes 5 --clean
 
 # running previously successful pipeline to access query on old data
-node engine/run.js --seeds "https://en.wikipedia.org/wiki/Computer_science" --maxPages 400 --nodes 30 
+
+
 
 --skipCrawl --skipIndex 
 
 # kill ports
-for port in $(seq 7110 7144); do lsof -ti:$port | xargs -r kill -9; done
+for port in $(seq 7110 7150); do lsof -ti:$port | xargs -r kill -9; done
 ```
 
 Index hanged at 1k pages (either that or i got impatient. tried with 5 nodes, doing 10 now)
@@ -52,3 +53,6 @@ note: moving end-to-end from graph to table so we can see each component seperat
 Modified mr.js, but this is really important modification. 
 BEFORE: shuffle sends one HTTP round-trip per KV-pair. This led to tens of thousands of HTTP requests!
 AFTER: batch all pairs that we want to send to the same node. That way, we reduce the amount of RPC calls, reducing latency 10x
+
+
+confirmed mapreduce crawl faster, set waves to 100

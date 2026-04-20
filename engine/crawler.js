@@ -5,8 +5,8 @@ const {convert} = require('html-to-text');
 const {JSDOM} = require('jsdom');
 const {URL} = require('url');
 
-const BATCH_SIZE = 1000;
-const FETCH_TIMEOUT = 5000;
+const BATCH_SIZE = 10;
+const FETCH_TIMEOUT = 15000;
 const MAX_BODY = 5 * 1024 * 1024; // 5 MB
 
 const STATE_KEY = '__crawler_state__';
@@ -82,7 +82,7 @@ function crawl(config, callback) {
         if (res.statusCode >= 300 && res.statusCode < 400 &&
             res.headers.location) {
           const next = new URL(res.headers.location, pageUrl).href;
-          console.log(`[crawler]   redirect ${res.statusCode} → ${next}`);
+          // console.log(`[crawler]   redirect ${res.statusCode} → ${next}`);
           res.resume();
           return fetchPage(next, cb);
         }

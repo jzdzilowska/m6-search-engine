@@ -174,7 +174,6 @@ function buildIndex(config, callback) {
   };
 
   /* ----- Run MR in chunks to avoid overwhelming shuffle ----- */
-  // NOTE: need to chunk this to avoid AWS out of memory errors during shuffle, especially with larger crawls and lower node counts
   const MR_CHUNK = 50; // pages per MR job
   const allResults = []; // accumulate {term: postings} across chunks
   let chunkIdx = 0;

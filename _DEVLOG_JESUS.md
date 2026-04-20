@@ -1,3 +1,16 @@
+BIG CHANGES:
+- added mapreduce process to crawler, increases throughput + decreases latency
+- added chunking to index mapreduce to decrease memory requirements (this took me embarrassingly long to find out)
+- benchmarking scripts. currently running scaling by nodes
+
+
+
+
+# REST
+---
+
+
+
 12:00AM - Try workload locally before pushing to AWS for a bit
 - ran with default params
 - running with command for poster locally: 

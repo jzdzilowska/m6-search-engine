@@ -6,7 +6,7 @@ const {JSDOM} = require('jsdom');
 const {URL} = require('url');
 
 const BATCH_SIZE = 1000;
-const FETCH_TIMEOUT = 2500;
+const FETCH_TIMEOUT = 5000;
 const MAX_BODY = 5 * 1024 * 1024; // 5 MB
 
 const STATE_KEY = '__crawler_state__';

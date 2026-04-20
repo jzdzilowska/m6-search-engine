@@ -173,63 +173,97 @@ function buildIndex(config, callback) {
     return {[key]: postings};
   };
 
-  /* ----- Run MR and persist the resulting index ----- */
-  distribution[pagesGid].mr.exec(
-      {keys: pageKeys, map: indexMapper, reduce: indexReducer},
-      (e, results) => {
-        if (e) {
-          console.error('[indexer] MR error:', e);
-          return callback(e);
+  /* ----- Run MR in chunks to avoid overwhelming shuffle ----- */
+  const MR_CHUNK = 50; // pages per MR job
+  const allResults = []; // accumulate {term: postings} across chunks
+  let chunkIdx = 0;
+
+  function runNextChunk() {
+    if (chunkIdx >= pageKeys.length) {
+      return finishIndex();
+    }
+
+    const chunkKeys = pageKeys.slice(chunkIdx, chunkIdx + MR_CHUNK);
+    const chunkNum = Math.floor(chunkIdx / MR_CHUNK) + 1;
+    const totalChunks = Math.ceil(pageKeys.length / MR_CHUNK);
+    console.log(
+        `[indexer] MR chunk ${chunkNum}/${totalChunks} ` +
+        `(${chunkKeys.length} pages)`,
+    );
+
+    distribution[pagesGid].mr.exec(
+        {keys: chunkKeys, map: indexMapper, reduce: indexReducer},
+        (e, results) => {
+          if (e) {
+            console.error(`[indexer] MR chunk ${chunkNum} error:`, e);
+          } else if (results && results.length > 0) {
+            allResults.push(...results);
+          }
+          chunkIdx += MR_CHUNK;
+          setImmediate(runNextChunk);
+        },
+    );
+  }
+
+  /* ----- Merge and persist after all MR chunks complete ----- */
+  function finishIndex() {
+    // Merge posting lists — same term can appear in multiple chunks
+    const merged = {}; // term → {url: tf, …}
+    for (const obj of allResults) {
+      const term = Object.keys(obj)[0];
+      const postings = obj[term];
+      if (!merged[term]) {
+        merged[term] = postings;
+      } else {
+        for (const [url, tf] of Object.entries(postings)) {
+          merged[term][url] = (merged[term][url] || 0) + tf;
         }
-        if (!results || results.length === 0) {
-          return callback(null, {totalTerms: 0, totalDocs});
+      }
+    }
+
+    const terms = Object.keys(merged);
+    console.log(`[indexer] Storing ${terms.length} merged terms …`);
+
+    if (terms.length === 0) {
+      return callback(null, {totalTerms: 0, totalDocs});
+    }
+
+    distribution[indexGid].store.put(totalDocs, '__totalDocs__', () => {
+      const BATCH = 500;
+      let idx = 0;
+
+      function storeBatch() {
+        if (idx >= terms.length) {
+          console.log(
+              `[indexer] Complete. ${terms.length} terms indexed ` +
+              `across ${totalDocs} docs.`,
+          );
+          return callback(null, {totalTerms: terms.length, totalDocs});
         }
 
-        console.log(`[indexer] Storing ${results.length} terms …`);
+        const batch = terms.slice(idx, idx + BATCH);
+        let done = 0;
 
-        // Persist total-docs metadata so the query engine can compute IDF
-        distribution[indexGid].store.put(
-            totalDocs, '__totalDocs__',
-            () => {
-              // Batch-store posting lists to avoid overwhelming the cluster
-              const BATCH = 500;
-              let idx = 0;
-
-              function storeBatch() {
-                if (idx >= results.length) {
-                  console.log(
-                      `[indexer] Complete. ${results.length} terms indexed ` +
-                      `across ${totalDocs} docs.`,
-                  );
-                  return callback(null, {
-                    totalTerms: results.length,
-                    totalDocs,
-                  });
-                }
-
-                const batch = results.slice(idx, idx + BATCH);
-                let done = 0;
-
-                batch.forEach((obj) => {
-                  const term = Object.keys(obj)[0];
-                  const postings = obj[term];
-                  distribution[indexGid].store.put(
-                      postings, term,
-                      () => {
-                        if (++done === batch.length) {
-                          idx += BATCH;
-                          setImmediate(storeBatch);
-                        }
-                      },
-                  );
-                });
+        batch.forEach((term) => {
+          distribution[indexGid].store.put(merged[term], term, () => {
+            if (++done === batch.length) {
+              idx += BATCH;
+              if (idx % 2000 === 0 || idx >= terms.length) {
+                console.log(
+                    `[indexer]   stored ${Math.min(idx, terms.length)}/${terms.length} terms`,
+                );
               }
+              setImmediate(storeBatch);
+            }
+          });
+        });
+      }
 
-              storeBatch();
-            },
-        );
-      },
-  );
+      storeBatch();
+    });
+  }
+
+  runNextChunk();
 }
 
 module.exports = {buildIndex};

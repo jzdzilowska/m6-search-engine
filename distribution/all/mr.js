@@ -83,20 +83,18 @@ function mr(config) {
           if (phase === 'map') {
             mapDone++;
             // print if in indexer
-            if (configuration.map.name === 'indexMapper') {
-              // @ts-ignore
-              console.log(`[mr] Map phase: ${mapDone}/${nodeCount} nodes done`);
-            }
+            // if (configuration.map.name === 'indexMapper') {
+            //   console.log(`[mr] Map phase: ${mapDone}/${nodeCount} nodes done`);
+            // }
             if (mapDone === nodeCount) {
               // console.log('[mr] Map phase complete, starting shuffle');
               triggerPhase('shuffle');
             }
           } else if (phase === 'shuffle') {
             shuffleDone++;
-            if (configuration.reduce.name === 'indexReducer') {
-              // @ts-ignore
-              console.log(`[mr] Shuffle phase: ${shuffleDone}/${nodeCount} nodes done`);
-            }
+            // if (configuration.reduce.name === 'indexReducer') {
+            //   console.log(`[mr] Shuffle phase: ${shuffleDone}/${nodeCount} nodes done`);
+            // }
             if (shuffleDone === nodeCount) {
               // console.log('[mr] Shuffle phase complete, starting reduce');
               triggerPhase('reduce');
@@ -104,10 +102,9 @@ function mr(config) {
           } else if (phase === 'reduce') {
             if (Array.isArray(data)) reduceResults.push(...data);
             reduceDone++;
-            if (configuration.reduce.name === 'indexReducer') {
-              // @ts-ignore
-              console.log(`[mr] Reduce phase: ${reduceDone}/${nodeCount} nodes done (${reduceResults.length} results so far)`);
-            }
+            // if (configuration.reduce.name === 'indexReducer') {
+            //   console.log(`[mr] Reduce phase: ${reduceDone}/${nodeCount} nodes done (${reduceResults.length} results so far)`);
+            // }
             // console.log(`[mr] Reduce phase: ${reduceDone}/${nodeCount} nodes done (${reduceResults.length} results so far)`);
             if (reduceDone === nodeCount) {
               // console.log(`[mr] Reduce phase complete, ${reduceResults.length} total results`);

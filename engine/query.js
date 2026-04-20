@@ -23,10 +23,10 @@ function search(queryStr, config, callback) {
   const tokens = tokenize(queryStr, stopwords);
   const terms = stemWords(tokens);
 
-  console.log(`[query] "${queryStr}" → tokens=${JSON.stringify(tokens)} stems=${JSON.stringify(terms)}`);
+  // console.log(`[query] "${queryStr}" → tokens=${JSON.stringify(tokens)} stems=${JSON.stringify(terms)}`);
 
   if (terms.length === 0) {
-    console.log('[query] No terms after stemming, returning empty');
+    // console.log('[query] No terms after stemming, returning empty');
     return callback(null, []);
   }
 
@@ -34,7 +34,7 @@ function search(queryStr, config, callback) {
   const uniqueTerms = [...new Set(terms)];
 
   distribution[indexGid].store.get('__totalDocs__', (e, totalDocs) => {
-    console.log(`[query] __totalDocs__ → err=${e ? e.message || e : 'null'}, val=${totalDocs}`);
+    // console.log(`[query] __totalDocs__ → err=${e ? e.message || e : 'null'}, val=${totalDocs}`);
     if (e || !totalDocs) totalDocs = 1;
 
     const urlScores = {};
@@ -43,7 +43,7 @@ function search(queryStr, config, callback) {
 
     uniqueTerms.forEach((term) => {
       distribution[indexGid].store.get(term, (e, postings) => {
-        console.log(`[query] get("${term}") → err=${e ? e.message || e : 'null'}, postings=${JSON.stringify(postings)}`);
+        // console.log(`[query] get("${term}") → err=${e ? e.message || e : 'null'}, postings=${JSON.stringify(postings)}`);
         if (!e && postings && typeof postings === 'object') {
           const df = Object.keys(postings).length;
           const idf = Math.log(1 + totalDocs / (1 + df));

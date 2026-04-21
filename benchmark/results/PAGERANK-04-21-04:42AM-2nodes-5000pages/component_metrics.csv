@@ -1,0 +1,6 @@
+component,duration_ms,latency_ms,throughput,throughput_unit,items
+Boot,8054,,,,
+Crawler,193298,38.66,25.87,pages/sec,5000
+Indexer,643795,128.76,7.77,docs/sec,5000
+Query,9724,9.52,102.84,queries/sec,
+End-to-End,854928,854928,,,

@@ -175,7 +175,7 @@ function formatBytes(b) {
 }
 
 console.log('[bench+serve] ══════════════════════════════════════════');
-console.log('[bench+serve]  Benchmark + Serve — Distributed Search Engine');
+console.log('[bench+serve]  Benchmark + Serve - Distributed Search Engine');
 console.log('[bench+serve] ══════════════════════════════════════════');
 console.log(`[bench+serve] Workers    : ${numNodes} (ports ${basePort}–${basePort + numNodes - 1})`);
 console.log(`[bench+serve] Seeds      : ${seeds.length} URL(s)`);
@@ -267,7 +267,7 @@ function runCrawlPhase() {
     metrics.crawl.storeTotalFiles = crawlStore.totalFiles;
     metrics.crawl.storePerNode = crawlStore.perNode;
 
-    console.log(`[bench+serve] Crawl done — ${result.totalCrawled} page(s) in ${dur}ms (${metrics.crawl.pagesPerSec.toFixed(2)} pages/sec)`);
+    console.log(`[bench+serve] Crawl done - ${result.totalCrawled} page(s) in ${dur}ms (${metrics.crawl.pagesPerSec.toFixed(2)} pages/sec)`);
     console.log(`[bench+serve] Crawl store: ${formatBytes(crawlStore.totalBytes)} across ${crawlStore.totalFiles} files, ${Object.keys(crawlStore.perNode).length} node(s)`);
     runIndexPhase(result.crawledUrls);
   });
@@ -309,7 +309,7 @@ function runIndexPhase(crawledUrls) {
     metrics.index.indexOnlyFiles = Math.max(0, indexStore.totalFiles - (metrics.crawl.storeTotalFiles || 0));
 
     console.log(
-        `[bench+serve] Index done — ${result.totalTerms} terms from ${totalDocs} doc(s) ` +
+        `[bench+serve] Index done - ${result.totalTerms} terms from ${totalDocs} doc(s) ` +
         `in ${dur}ms (${metrics.index.docsPerSec.toFixed(2)} docs/sec)`,
     );
     console.log(`[bench+serve] Total store: ${formatBytes(indexStore.totalBytes)} across ${indexStore.totalFiles} files`);
@@ -556,6 +556,6 @@ function shutdown() {
 
 /* Graceful shutdown on SIGINT */
 process.on('SIGINT', () => {
-  console.log('\n[bench+serve] Interrupted — shutting down…');
+  console.log('\n[bench+serve] Interrupted - shutting down...');
   shutdown();
 });

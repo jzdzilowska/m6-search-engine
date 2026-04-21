@@ -52,7 +52,7 @@ ARGS=(
 [[ "$SKIP_CRAWL" == "true" ]] && ARGS+=(--skipCrawl)
 [[ "$SKIP_INDEX" == "true" ]] && ARGS+=(--skipIndex)
 
-# Run benchmark — capture output to find the results directory
+# Run benchmark - capture output to find the results directory
 # Extra CLI args ($@) override the config above
 OUTPUT=$(node "$DIR/benchmark.js" "${ARGS[@]}" "$@" 2>&1 | tee /dev/stderr)
 

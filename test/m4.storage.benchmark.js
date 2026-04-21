@@ -93,7 +93,7 @@ async function main() {
         distribution.local.comm.send(
             ['sid'], {node, service: 'status', method: 'get'}, (e, v) => {
               if (e) {
-                console.error(`  FAIL ${node.ip}:${node.port} — ${e.message}`);
+                console.error(`  FAIL ${node.ip}:${node.port} - ${e.message}`);
                 reject(e);
               } else {
                 console.log(`  OK   ${node.ip}:${node.port} (sid: ${v})`);
@@ -201,7 +201,7 @@ async function main() {
   console.log(`  "throughput": { "aws": [${insertStats.throughput.toFixed(2)}, ${getStats.throughput.toFixed(2)}] }`);
   console.log(`  "latency":    { "aws": [${insertStats.avg.toFixed(2)}, ${getStats.avg.toFixed(2)}] }`);
 
-  // cleanup — only stop nodes if we spawned them locally
+  // cleanup - only stop nodes if we spawned them locally
   if (!REMOTE) {
     for (const node of [n1, n2, n3]) {
       await new Promise((resolve) => {

@@ -2,7 +2,7 @@
 
 /**
  * Used AI to generate this file for debugging purposes. Not part of core functionality of search engine.
- * Debug orchestrator — same pipeline as run.js but with live node
+ * Debug orchestrator - same pipeline as run.js but with live node
  * status monitoring printed to the terminal at each stage.
  *
  * Shows per-node: message counts, heap usage, and store data distribution.
@@ -91,7 +91,7 @@ function getStoreSizes() {
 function printNodeStatus(label, cb) {
   const line = '─'.repeat(70);
   console.log(`\n\x1b[36m${line}\x1b[0m`);
-  console.log(`\x1b[36m  NODE STATUS — ${label}\x1b[0m`);
+  console.log(`\x1b[36m  NODE STATUS - ${label}\x1b[0m`);
   console.log(`\x1b[36m${line}\x1b[0m`);
 
   let pending = 3; // counts, heapUsed, heapTotal
@@ -163,7 +163,7 @@ function startPolling(label) {
 /* ------------------------------------------------------------------ */
 
 console.log('\x1b[33m╔══════════════════════════════════════════════╗\x1b[0m');
-console.log('\x1b[33m║  DEBUG RUN — Distributed Search Engine       ║\x1b[0m');
+console.log('\x1b[33m║  DEBUG RUN - Distributed Search Engine       ║\x1b[0m');
 console.log('\x1b[33m╠══════════════════════════════════════════════╣\x1b[0m');
 console.log(`\x1b[33m║\x1b[0m  Workers : ${numNodes} (ports ${basePort}–${basePort + numNodes - 1})`);
 console.log(`\x1b[33m║\x1b[0m  Seeds   : ${seeds.length} URL(s)`);
@@ -235,7 +235,7 @@ function runCrawlPhase() {
       console.error('[debug] Crawl failed:', e);
       process.exit(1);
     }
-    console.log(`\x1b[32m✓ Crawl done — ${result.totalCrawled} page(s) in ${elapsed}s\x1b[0m`);
+    console.log(`\x1b[32m✓ Crawl done - ${result.totalCrawled} page(s) in ${elapsed}s\x1b[0m`);
     printNodeStatus('After Crawl', () => runIndexPhase(result.crawledUrls));
   });
 }
@@ -258,7 +258,7 @@ function runIndexPhase(crawledUrls) {
       console.error('[debug] Index failed:', e);
       process.exit(1);
     }
-    console.log(`\x1b[32m✓ Index done — ${result.totalTerms} terms from ${result.totalDocs} doc(s) in ${elapsed}s\x1b[0m`);
+    console.log(`\x1b[32m✓ Index done - ${result.totalTerms} terms from ${result.totalDocs} doc(s) in ${elapsed}s\x1b[0m`);
     printNodeStatus('After Index', () => runServePhase());
   });
 }

@@ -4,7 +4,7 @@ const {urlKey} = require('./utils');
  * Build an inverted index with TF-IDF from crawled pages using MapReduce.
  *
  * Memory-critical: results from each MR chunk are streamed directly to the
- * index store and discarded — never accumulated in a coordinator-side array.
+ * index store and discarded - never accumulated in a coordinator-side array.
  * For terms that appear across multiple chunks, the reducer's postings are
  * merged into whatever is already stored (read-merge-write).
  */
@@ -24,7 +24,7 @@ function buildIndex(config, callback) {
   console.log(`[indexer] Indexing ${totalDocs} pages …`);
 
   /* -----------------------------------------------------------------
-   * Mapper — fully self-contained (no require — workers lack it).
+   * Mapper - fully self-contained (no require - workers lack it).
    * ----------------------------------------------------------------- */
   const indexMapper = (key, value) => {
     function porterStem(w) {
@@ -147,7 +147,7 @@ function buildIndex(config, callback) {
   };
 
   /* -----------------------------------------------------------------
-   * Reducer — merges per-page TF entries into a single posting list
+   * Reducer - merges per-page TF entries into a single posting list
    * per term: { url1: tf1, url2: tf2, … }
    * ----------------------------------------------------------------- */
   const indexReducer = (key, values) => {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CS1380 M6 Poster — Distributed Search Engine</title>
+<title>CS1380 M6 Poster - Distributed Search Engine</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -620,9 +620,9 @@
   <!-- ══════════ HEADER ══════════ -->
   <div class="header">
     <div class="header-left">
-      <div class="course-tag">CS1380 : 2026 : M6 — Cloud Deployment</div>
+      <div class="course-tag">CS1380 : 2026 : M6 - Cloud Deployment</div>
       <div class="title">Distributed Search Engine</div>
-      <div class="subtitle">A progressively-built, MapReduce-powered search engine deployed on AWS EC2 — from single-machine crawling to fully distributed indexing and retrieval.</div>
+      <div class="subtitle">A progressively-built, MapReduce-powered search engine deployed on AWS EC2 - from single-machine crawling to fully distributed indexing and retrieval.</div>
     </div>
     <div class="header-right">
       <div class="author-name">Julia Zdzilowska</div>
@@ -636,7 +636,7 @@
 
   <!-- ══════════ ARCHITECTURE (full width) ══════════ -->
   <div class="card card-blue arch-section">
-    <div class="section-label label-blue">01 — System Overview</div>
+    <div class="section-label label-blue">01 - System Overview</div>
     <div class="section-title">End-to-End Architecture</div>
     <div class="section-text" style="margin-bottom: 0.15in;">
       The system is structured in layers: application-level search components communicate through a group-based distributed services framework, backed by persistent and in-memory storage, all running on AWS EC2 nodes.
@@ -710,7 +710,7 @@
 
     <!-- Milestones -->
     <div class="card card-cyan">
-      <div class="section-label label-cyan">02 — Progressive Build</div>
+      <div class="section-label label-cyan">02 - Progressive Build</div>
       <div class="section-title">Milestone Progression</div>
 
       <div class="timeline">
@@ -718,7 +718,7 @@
           <div class="ms-badge box-blue">M0</div>
           <div class="ms-content">
             <div class="ms-name">Single-Machine Search</div>
-            <div class="ms-desc">Crawler, indexer, query engine — no distribution</div>
+            <div class="ms-desc">Crawler, indexer, query engine - no distribution</div>
           </div>
           <div class="ms-stat">279 LoC</div>
         </div>
@@ -787,7 +787,7 @@
 
     <!-- MapReduce Pipeline -->
     <div class="card card-purple">
-      <div class="section-label label-purple">03 — Execution Model</div>
+      <div class="section-label label-purple">03 - Execution Model</div>
       <div class="section-title">MapReduce Pipeline</div>
       <div class="section-text">The coordinator registers ephemeral services across all group nodes, serializes mapper/reducer functions, and orchestrates three synchronized phases:</div>
 
@@ -809,7 +809,7 @@
       </div>
 
       <div class="section-text" style="margin-top: 0.18in; font-size: 0.17in;">
-        <strong style="color: var(--text);">Synchronization:</strong> Coordinator tracks completion per phase via <span style="font-family: 'JetBrains Mono'; color: var(--accent-purple);">notify</span> callbacks — advances only when all nodes confirm. Functions are serialized and shipped to remote nodes for local execution.
+        <strong style="color: var(--text);">Synchronization:</strong> Coordinator tracks completion per phase via <span style="font-family: 'JetBrains Mono'; color: var(--accent-purple);">notify</span> callbacks - advances only when all nodes confirm. Functions are serialized and shipped to remote nodes for local execution.
       </div>
     </div>
   </div>
@@ -819,7 +819,7 @@
 
     <!-- Key Benchmarks -->
     <div class="card card-green">
-      <div class="section-label label-green">04 — Performance</div>
+      <div class="section-label label-green">04 - Performance</div>
       <div class="section-title">Key Benchmarks</div>
 
       <div class="bench-grid">
@@ -848,7 +848,7 @@
 
     <!-- Latency: Local vs AWS -->
     <div class="card card-orange">
-      <div class="section-label label-orange">05 — Local vs. AWS EC2</div>
+      <div class="section-label label-orange">05 - Local vs. AWS EC2</div>
       <div class="section-title">Latency Comparison</div>
 
       <table class="latency-table">
@@ -895,7 +895,7 @@
 
     <!-- Throughput by Milestone -->
     <div class="card card-pink">
-      <div class="section-label label-pink">06 — Throughput by Milestone</div>
+      <div class="section-label label-pink">06 - Throughput by Milestone</div>
       <div class="section-title">Lines of Code Contributed</div>
 
       <div class="bar-chart">
@@ -932,7 +932,7 @@
 
     <!-- Component Breakdown -->
     <div class="card card-cyan">
-      <div class="section-label label-cyan">07 — Components</div>
+      <div class="section-label label-cyan">07 - Components</div>
       <div class="section-title">Module Breakdown</div>
 
       <table class="comp-table">
@@ -981,7 +981,7 @@
 
     <!-- Key Challenges -->
     <div class="card card-orange">
-      <div class="section-label label-orange">08 — Challenges & Solutions</div>
+      <div class="section-label label-orange">08 - Challenges & Solutions</div>
       <div class="section-title">Key Technical Decisions</div>
 
       <div class="challenge-item">
@@ -1007,7 +1007,7 @@
 
     <!-- Tech Stack -->
     <div class="card card-green">
-      <div class="section-label label-green">09 — Stack & Environment</div>
+      <div class="section-label label-green">09 - Stack & Environment</div>
       <div class="section-title">Technology</div>
 
       <div class="tech-pills">
@@ -1027,7 +1027,7 @@
       </div>
 
       <div class="section-text" style="margin-top: 0.12in;">
-        <strong style="color: var(--text);">Testing:</strong> Comprehensive Jest suite with 4 tiers — unit tests, scenario tests (NCDC, TF-IDF, string matching), extra credit, and instructor-provided integration tests.
+        <strong style="color: var(--text);">Testing:</strong> Comprehensive Jest suite with 4 tiers - unit tests, scenario tests (NCDC, TF-IDF, string matching), extra credit, and instructor-provided integration tests.
       </div>
     </div>
   </div>
@@ -1035,7 +1035,7 @@
   <!-- ══════════ FOOTER ══════════ -->
   <div class="footer">
     <div class="footer-left">
-      CS1380: Distributed Computer Systems — Brown University — Spring 2026
+      CS1380: Distributed Computer Systems - Brown University - Spring 2026
     </div>
     <div class="footer-right">
       <div class="footer-badge">Node.js</div>

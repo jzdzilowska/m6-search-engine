@@ -38,7 +38,7 @@ SUMMARY="$SCALING_DIR/scaling_summary.csv"
 echo "nodes,crawl_duration_ms,crawl_latency_ms,crawl_throughput,index_duration_ms,index_latency_ms,index_throughput,query_duration_ms,query_latency_ms,query_throughput,total_duration_ms" > "$SUMMARY"
 
 echo "════════════════════════════════════════════════════════════"
-echo " Scaling Benchmark — ${#NODE_COUNTS[@]} runs"
+echo " Scaling Benchmark - ${#NODE_COUNTS[@]} runs"
 echo " Pages: <10 nodes → 500, ≥10 nodes → $MAX_PAGES | Query runs: $QUERY_RUNS"
 echo " Node counts: ${NODE_COUNTS[*]}"
 echo " Output: $SCALING_DIR"
@@ -55,7 +55,7 @@ for N in "${NODE_COUNTS[@]}"; do
   fi
 
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo " Running with $N node(s) — $RUN_PAGES pages..."
+  echo " Running with $N node(s) - $RUN_PAGES pages..."
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   # Kill leftover workers
@@ -84,14 +84,14 @@ for N in "${NODE_COUNTS[@]}"; do
 
   # Run benchmark, capture output
   OUTPUT=$(node "$DIR/benchmark.js" "${ARGS[@]}" 2>&1 | tee /dev/stderr) || {
-    echo "[scaling] FAILED with $N nodes — skipping"
+    echo "[scaling] FAILED with $N nodes - skipping"
     continue
   }
 
   # Find the output directory
   OUT_DIR=$(echo "$OUTPUT" | grep -oP '(?<=Output dir : ).*')
   if [ -z "$OUT_DIR" ]; then
-    echo "[scaling] Could not find output dir for N=$N — skipping"
+    echo "[scaling] Could not find output dir for N=$N - skipping"
     continue
   fi
 

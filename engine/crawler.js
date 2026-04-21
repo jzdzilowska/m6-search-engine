@@ -8,7 +8,7 @@ const STATE_KEY = '__crawler_state__';
 const URL_LIST_KEY = '__crawled_urls__';
 
 /**
- * Distributed crawler — fetching is distributed across workers.
+ * Distributed crawler - fetching is distributed across workers.
  *
  * The coordinator manages the frontier, visited/queued sets, and persistence.
  * Each wave, it splits a batch of URLs round-robin across all workers in the
@@ -173,7 +173,7 @@ function crawl(config, callback) {
             }
 
             if (++workersResponded === totalWorkersSent) {
-              // All workers responded — now store pages from coordinator
+              // All workers responded - now store pages from coordinator
               if (allPages.length === 0) {
                 return setImmediate(runWave);
               }

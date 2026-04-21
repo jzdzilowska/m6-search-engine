@@ -68,7 +68,7 @@ test('(15 pts) detect the need to reconfigure', (done) => {
           setTimeout(() => {
             distribution.local.comm.send(
                 ['sid'], {node: n3, service: 'status', method: 'get'}, (e) => {
-                  // this error means we detected n3 is gone — need to reconfigure
+                  // this error means we detected n3 is gone - need to reconfigure
                   expect(e).toBeTruthy();
 
                   // remove n3 from group and run reconf

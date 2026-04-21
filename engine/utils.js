@@ -26,7 +26,7 @@ function tokenize(text, stopwords) {
 }
 
 /**
- * Porter stemmer — same algorithm used by the MR mapper so query stems
+ * Porter stemmer - same algorithm used by the MR mapper so query stems
  * match index stems (workers lack `require`, so natural can't be used).
  */
 function porterStem(w) {

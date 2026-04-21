@@ -84,7 +84,7 @@ for (let i = 0; i < numNodes; i++) {
 }
 
 console.log('[run] ──────────────────────────────────────');
-console.log('[run]  Distributed Search Engine — CS1380 M6');
+console.log('[run]  Distributed Search Engine - CS1380 M6');
 console.log('[run] ──────────────────────────────────────');
 console.log(`[run] Workers : ${numNodes} (ports ${basePort}–${basePort + numNodes - 1})`);
 console.log(`[run] Seeds   : ${seeds.length} URL(s)`);
@@ -158,7 +158,7 @@ function runCrawlPhase() {
       console.error('[run] Crawl failed:', e);
       process.exit(1);
     }
-    console.log(`[run] Crawl done — ${result.totalCrawled} page(s)`);
+    console.log(`[run] Crawl done - ${result.totalCrawled} page(s)`);
     runIndexPhase(result.crawledUrls);
   });
 }
@@ -180,7 +180,7 @@ function runIndexPhase(crawledUrls) {
       process.exit(1);
     }
     console.log(
-        `[run] Index done — ${result.totalTerms} terms ` +
+        `[run] Index done - ${result.totalTerms} terms ` +
         `from ${result.totalDocs} doc(s)`,
     );
     runServePhase();
@@ -229,7 +229,7 @@ function registerGroups(names, group, idx, cb) {
   });
 }
 
-/* Graceful shutdown — tear down workers on exit */
+/* Graceful shutdown - tear down workers on exit */
 process.on('SIGINT', () => {
   console.log('\n[run] Shutting down …');
   let remaining = workerNodes.length;

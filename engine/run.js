@@ -108,7 +108,7 @@ function startWorker() {
 
     const crawlService = require('./worker_crawl');
     dist.local.routes.put(crawlService, 'crawl-fetch', () => {
-      console.log(`[worker] Ready — listening on ${nodeIp}:${port} (crawl-fetch registered)`);
+      console.log(`[worker] Ready - listening on ${nodeIp}:${port} (crawl-fetch registered)`);
     });
   });
 
@@ -243,7 +243,7 @@ function runCrawlPhase(dist, seeds) {
       console.error('[coordinator] Crawl failed:', e);
       process.exit(1);
     }
-    console.log(`[coordinator] Crawl done — ${result.totalCrawled} page(s)`);
+    console.log(`[coordinator] Crawl done - ${result.totalCrawled} page(s)`);
     runIndexPhase(dist, result.crawledUrls);
   });
 }
@@ -251,7 +251,7 @@ function runCrawlPhase(dist, seeds) {
 function runIndexPhase(dist, crawledUrls) {
   if (args.skipIndex) {
     console.log('[coordinator] Skipping index (--skipIndex)');
-    return runServePhase();
+    return runPageRankPhase(dist, crawledUrls);
   }
 
   const {buildIndex} = require('./indexer');
@@ -265,9 +265,35 @@ function runIndexPhase(dist, crawledUrls) {
       process.exit(1);
     }
     console.log(
-        `[coordinator] Index done — ${result.totalTerms} terms ` +
+        `[coordinator] Index done - ${result.totalTerms} terms ` +
         `from ${result.totalDocs} doc(s)`,
     );
+    runPageRankPhase(dist, crawledUrls);
+  });
+}
+
+function runPageRankPhase(dist, crawledUrls) {
+  if (args.skipIndex) {
+    console.log('[coordinator] Skipping PageRank (--skipIndex)');
+    return runServePhase();
+  }
+
+  const {computePageRank} = require('./pagerank');
+  computePageRank({
+    crawlGroupName: 'crawl',
+    indexGroupName: 'index',
+    crawledUrls,
+    iterations: 10,
+  }, (e, result) => {
+    if (e) {
+      console.error('[coordinator] PageRank failed:', e);
+      // Non-fatal - continue to serve
+    } else {
+      console.log(
+          `[coordinator] PageRank done - ${result.pageCount} pages, ` +
+          `${result.iterations} iterations`,
+      );
+    }
     runServePhase();
   });
 }

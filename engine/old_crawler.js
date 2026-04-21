@@ -132,11 +132,11 @@ function crawl(config, callback) {
   }
 
   /* ---- MR mapper: parse raw HTML on worker nodes ---- */
-  /* Self-contained (no require) — serialised and sent to workers.
+  /* Self-contained (no require) - serialised and sent to workers.
      Extracts text, title, and outlinks from raw HTML via regex.
      Emits:
-       { '__page__:<urlHash>': JSON content }   — processed page
-       { <outlink>: '1' }                       — each discovered link
+       { '__page__:<urlHash>': JSON content }   - processed page
+       { <outlink>: '1' }                       - each discovered link
      Shuffle distributes outlinks deterministically by URL hash. */
   const crawlMapper = (key, value) => {
     if (!value || !value.html) return [];
@@ -160,7 +160,7 @@ function crawl(config, callback) {
       if (tm) title = tm[1].trim();
     } catch (e) { /* */ }
 
-    // Extract outlinks via regex (no JSDOM — workers can't require)
+    // Extract outlinks via regex (no JSDOM - workers can't require)
     const linkRe = /<a\s[^>]*href\s*=\s*["']([^"'#][^"']*)["']/gi;
     const outlinks = [];
     let m;
@@ -192,7 +192,7 @@ function crawl(config, callback) {
       }),
     });
 
-    // Emit each outlink — shuffle hashes these to nodes for dedup
+    // Emit each outlink - shuffle hashes these to nodes for dedup
     for (const link of uniqueLinks) {
       results.push({[link]: '1'});
     }
@@ -232,7 +232,7 @@ function crawl(config, callback) {
         `| frontier: ${frontier.length}`,
     );
 
-    /* Phase 1 — fetch raw HTML on coordinator (parallel within batch) */
+    /* Phase 1 - fetch raw HTML on coordinator (parallel within batch) */
     let fetchDone = 0;
     const fetchedPages = [];
 
@@ -250,7 +250,7 @@ function crawl(config, callback) {
           return saveState(() => setImmediate(runWave));
         }
 
-        /* Phase 2 — store raw HTML in distributed store (sharded) */
+        /* Phase 2 - store raw HTML in distributed store (sharded) */
         console.log(
             `[crawler] Storing ${fetchedPages.length} pages for MR`,
         );
@@ -269,7 +269,7 @@ function crawl(config, callback) {
       });
     });
 
-    /* Phase 3 — MR: map extracts content + outlinks, shuffle distributes,
+    /* Phase 3 - MR: map extracts content + outlinks, shuffle distributes,
        reduce deduplicates */
     function runCrawlMR(keys) {
       console.log(`[crawler] MR map: ${keys.length} pages`);
@@ -307,7 +307,7 @@ function crawl(config, callback) {
                 `${newLinks.length} outlinks`,
             );
 
-            /* Phase 4 — persist processed content (overwrite raw HTML) */
+            /* Phase 4 - persist processed content (overwrite raw HTML) */
             let contentStored = 0;
 
             function onAllStored() {

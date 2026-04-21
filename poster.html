@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PageTurn - Distributed Search Engine for Open Books</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #ffffff;
@@ -19,128 +19,39 @@
     --accent-orange: #d97706;
     --accent-pink: #db2777;
     --accent-purple: #7c3aed;
-    --accent-red: #dc2626;
-    --accent-yellow: #ca8a04;
   }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   @page { size: 40in 60in; margin: 0; }
   html, body { width: 40in; height: 60in; margin: 0; }
-
   body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    width: 40in;
-    height: 60in;
-    overflow: hidden;
-    position: relative;
+    font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text);
+    width: 40in; height: 60in; overflow: hidden; position: relative;
   }
-
   body::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 80px 80px;
-    opacity: 0.12;
-    pointer-events: none;
+    content: ''; position: absolute; inset: 0;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 80px 80px; opacity: 0.12; pointer-events: none;
   }
-
   .poster {
-    width: 100%;
-    height: 100%;
-    padding: 1.2in;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    width: 100%; height: 100%; padding: 1.4in;
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: auto auto 1fr auto;
-    gap: 0.5in;
-    position: relative;
-    z-index: 1;
+    gap: 0.55in; position: relative; z-index: 1;
   }
 
   /* ── HEADER ── */
-  .header {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    padding-bottom: 0.5in;
-    border-bottom: 4px solid var(--accent-blue);
-    gap: 0.6in;
-  }
-
+  .header { grid-column: 1/-1; display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 0.55in; border-bottom: 5px solid var(--accent-blue); gap: 0.8in; }
   .header-left { flex: 1; }
-
-  .course-tag {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.32in;
-    font-weight: 500;
-    color: var(--accent-cyan);
-    background: rgba(8, 145, 178, 0.08);
-    border: 1px solid rgba(8, 145, 178, 0.25);
-    padding: 0.08in 0.25in;
-    border-radius: 6px;
-    letter-spacing: 0.02em;
-    margin-bottom: 0.2in;
-  }
-
-  .title {
-    font-family: 'Playfair Display', serif;
-    font-weight: 800;
-    font-size: 1.7in;
-    line-height: 1.05;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, #1a1a1a 30%, var(--accent-blue) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.15in;
-  }
-
-  .subtitle {
-    font-size: 0.44in;
-    color: var(--text-dim);
-    font-weight: 400;
-    line-height: 1.4;
-  }
-
+  .course-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.36in; font-weight: 500; color: var(--accent-cyan); background: rgba(8,145,178,0.08); border: 1px solid rgba(8,145,178,0.25); padding: 0.1in 0.3in; border-radius: 6px; letter-spacing: 0.02em; margin-bottom: 0.25in; }
+  .title { font-family: 'Playfair Display', serif; font-weight: 800; font-size: 2in; line-height: 1.05; letter-spacing: -0.02em; background: linear-gradient(135deg, #1a1a1a 30%, var(--accent-blue) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.18in; }
+  .subtitle { font-size: 0.5in; color: var(--text-dim); font-weight: 400; line-height: 1.4; }
   .header-right { text-align: right; flex-shrink: 0; }
-
-  .author-name {
-    font-size: 0.52in;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 0.06in;
-  }
-
-  .author-info {
-    font-size: 0.32in;
-    color: var(--text-dim);
-    line-height: 1.5;
-  }
+  .author-name { font-size: 0.58in; font-weight: 600; margin-bottom: 0.1in; }
+  .author-info { font-size: 0.36in; color: var(--text-dim); line-height: 1.5; }
 
   /* ── CARDS ── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 0.5in;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 5px;
-  }
-
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 0.55in; position: relative; overflow: hidden; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px; }
   .card-blue::before { background: var(--accent-blue); }
   .card-cyan::before { background: var(--accent-cyan); }
   .card-green::before { background: var(--accent-green); }
@@ -148,774 +59,454 @@
   .card-pink::before { background: var(--accent-pink); }
   .card-purple::before { background: var(--accent-purple); }
 
-  .section-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.24in;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.18in;
-  }
+  .sl { font-family: 'JetBrains Mono', monospace; font-size: 0.26in; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.2in; }
+  .lb { color: var(--accent-blue); } .lc { color: var(--accent-cyan); } .lg { color: var(--accent-green); }
+  .lo { color: var(--accent-orange); } .lp { color: var(--accent-pink); } .lv { color: var(--accent-purple); }
+  .st { font-size: 0.62in; font-weight: 700; margin-bottom: 0.22in; line-height: 1.15; }
+  .tx { font-size: 0.36in; line-height: 1.55; color: var(--text-dim); }
+  .tx2 { font-size: 0.3in; line-height: 1.5; color: var(--text-dim); }
 
-  .label-blue { color: var(--accent-blue); }
-  .label-cyan { color: var(--accent-cyan); }
-  .label-green { color: var(--accent-green); }
-  .label-orange { color: var(--accent-orange); }
-  .label-pink { color: var(--accent-pink); }
-  .label-purple { color: var(--accent-purple); }
-
-  .section-title {
-    font-size: 0.54in;
-    font-weight: 700;
-    margin-bottom: 0.22in;
-    line-height: 1.2;
-  }
-
-  .section-text {
-    font-size: 0.3in;
-    line-height: 1.6;
-    color: var(--text-dim);
-  }
-
-  /* ── ARCHITECTURE ── */
-  .arch-section { grid-column: 1 / -1; }
-
-  .arch-diagram {
-    display: flex;
-    flex-direction: column;
-    gap: 0.22in;
-    margin-top: 0.25in;
-  }
-
-  .arch-layer {
-    display: flex;
-    align-items: center;
-    gap: 0.25in;
-  }
-
-  .arch-layer-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.24in;
-    color: var(--text-dim);
-    width: 2.6in;
-    text-align: right;
-    flex-shrink: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .arch-boxes {
-    display: flex;
-    gap: 0.2in;
-    flex: 1;
-  }
-
-  .arch-box {
-    flex: 1;
-    padding: 0.28in 0.3in;
-    border-radius: 10px;
-    font-size: 0.28in;
-    font-weight: 600;
-    text-align: center;
-    border: 2px solid;
-  }
-
-  .arch-box small {
-    display: block;
-    font-weight: 400;
-    font-size: 0.2in;
-    margin-top: 0.04in;
-    opacity: 0.7;
-  }
-
-  .box-blue { background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.3); color: var(--accent-blue); }
-  .box-cyan { background: rgba(8,145,178,0.08); border-color: rgba(8,145,178,0.3); color: var(--accent-cyan); }
-  .box-green { background: rgba(5,150,105,0.08); border-color: rgba(5,150,105,0.3); color: var(--accent-green); }
-  .box-orange { background: rgba(217,119,6,0.08); border-color: rgba(217,119,6,0.3); color: var(--accent-orange); }
-  .box-purple { background: rgba(124,58,237,0.08); border-color: rgba(124,58,237,0.3); color: var(--accent-purple); }
-  .box-pink { background: rgba(219,39,119,0.08); border-color: rgba(219,39,119,0.3); color: var(--accent-pink); }
-
-  .arch-arrow {
-    display: flex;
-    justify-content: center;
-    padding: 0.04in 0;
-  }
-
-  .arch-arrow svg { width: 0.4in; height: 0.4in; }
-
-  /* ── PIPELINE ── */
-  .pipeline {
-    display: flex;
-    align-items: center;
-    gap: 0.15in;
-    margin-top: 0.25in;
-  }
-
-  .pipeline-phase {
-    flex: 1;
-    text-align: center;
-    padding: 0.3in 0.2in;
-    border-radius: 10px;
-  }
-
-  .pipeline-phase-name {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.3in;
-    font-weight: 700;
-    margin-bottom: 0.06in;
-  }
-
-  .pipeline-phase-desc {
-    font-size: 0.22in;
-    opacity: 0.7;
-  }
-
-  .pipeline-arrow {
-    font-size: 0.4in;
-    color: var(--text-dim);
-    flex-shrink: 0;
-  }
+  /* ── ARCH ── */
+  .arch-section { grid-column: 1/-1; }
+  .arch-diagram { display: flex; flex-direction: column; gap: 0.18in; margin-top: 0.2in; }
+  .arch-layer { display: flex; align-items: center; gap: 0.25in; }
+  .arch-layer-label { font-family: 'JetBrains Mono', monospace; font-size: 0.24in; color: var(--text-dim); width: 2.6in; text-align: right; flex-shrink: 0; text-transform: uppercase; letter-spacing: 0.06em; }
+  .arch-boxes { display: flex; gap: 0.2in; flex: 1; }
+  .arch-box { flex: 1; padding: 0.3in 0.2in; border-radius: 12px; font-size: 0.3in; font-weight: 600; text-align: center; border: 2px solid; }
+  .arch-box small { display: block; font-weight: 400; font-size: 0.2in; margin-top: 0.04in; opacity: 0.7; }
+  .box-b { background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.3); color: var(--accent-blue); }
+  .box-c { background: rgba(8,145,178,0.08); border-color: rgba(8,145,178,0.3); color: var(--accent-cyan); }
+  .box-g { background: rgba(5,150,105,0.08); border-color: rgba(5,150,105,0.3); color: var(--accent-green); }
+  .box-o { background: rgba(217,119,6,0.08); border-color: rgba(217,119,6,0.3); color: var(--accent-orange); }
+  .box-v { background: rgba(124,58,237,0.08); border-color: rgba(124,58,237,0.3); color: var(--accent-purple); }
+  .box-p { background: rgba(219,39,119,0.08); border-color: rgba(219,39,119,0.3); color: var(--accent-pink); }
+  .arch-arrow { display: flex; justify-content: center; padding: 0.02in 0; }
+  .arch-arrow svg { width: 0.36in; height: 0.36in; }
 
   /* ── STATS ── */
-  .stat-row {
-    display: flex;
-    gap: 0.2in;
-    margin-top: 0.2in;
-  }
+  .sr { display: flex; gap: 0.2in; margin-top: 0.2in; }
+  .si { flex: 1; text-align: center; padding: 0.26in; background: var(--surface2); border-radius: 10px; }
+  .sn { font-family: 'JetBrains Mono', monospace; font-size: 0.65in; font-weight: 700; color: var(--accent-blue); line-height: 1; }
+  .slb { font-size: 0.24in; color: var(--text-dim); margin-top: 0.08in; }
 
-  .stat-item {
-    flex: 1;
-    text-align: center;
-    padding: 0.25in;
-    background: var(--surface2);
-    border-radius: 10px;
-  }
+  /* ── GROUPED BAR CHART ── */
+  .gchart { margin-top: 0.18in; }
+  .gchart-body { display: flex; align-items: flex-end; justify-content: space-around; height: 3.8in; border-left: 2px solid var(--border); border-bottom: 2px solid var(--border); padding: 0 0.3in; position: relative; }
+  .gchart-group { display: flex; flex-direction: column; align-items: center; gap: 0.08in; }
+  .gchart-bars { display: flex; align-items: flex-end; gap: 0.1in; }
+  .gchart-bar { width: 0.5in; border-radius: 5px 5px 0 0; position: relative; min-height: 0.35in; }
+  .gchart-bar span { position: absolute; top: -0.26in; left: 50%; transform: translateX(-50%); font-family: 'JetBrains Mono', monospace; font-size: 0.2in; font-weight: 600; white-space: nowrap; }
+  .gchart-xlabel { font-family: 'JetBrains Mono', monospace; font-size: 0.24in; color: var(--text-dim); margin-top: 0.08in; }
+  .gchart-legend { display: flex; gap: 0.35in; justify-content: center; margin-top: 0.15in; }
+  .gchart-legend-item { display: flex; align-items: center; gap: 0.1in; font-size: 0.24in; color: var(--text-dim); }
+  .gchart-legend-dot { width: 0.22in; height: 0.22in; border-radius: 4px; }
 
-  .stat-num {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.52in;
-    font-weight: 700;
-    color: var(--accent-blue);
-    line-height: 1;
-  }
-
-  .stat-label {
-    font-size: 0.2in;
-    color: var(--text-dim);
-    margin-top: 0.06in;
-  }
-
-  /* ── BENCH GRID ── */
-  .bench-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.25in;
-    margin-top: 0.2in;
-  }
-
-  .bench-item {
-    background: var(--surface2);
-    border-radius: 10px;
-    padding: 0.3in;
-  }
-
-  .bench-metric {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6in;
-    font-weight: 700;
-    line-height: 1;
-    margin-bottom: 0.08in;
-  }
-
-  .bench-label {
-    font-size: 0.24in;
-    color: var(--text-dim);
-    line-height: 1.3;
-  }
-
-  .bench-context {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.18in;
-    color: var(--text-dim);
-    opacity: 0.6;
-    margin-top: 0.04in;
-  }
-
-  /* ── BAR CHART ── */
+  /* ── HORIZONTAL BAR CHART ── */
   .bar-chart { margin-top: 0.15in; }
+  .bar-row { display: flex; align-items: center; margin-bottom: 0.14in; gap: 0.14in; }
+  .bar-label { font-family: 'JetBrains Mono', monospace; font-size: 0.26in; color: var(--text-dim); width: 2.2in; text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 0.5in; background: var(--surface2); border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.14in; font-family: 'JetBrains Mono', monospace; font-size: 0.24in; font-weight: 700; color: white; min-width: 0.9in; }
+  .bf-b { background: linear-gradient(90deg, rgba(37,99,235,0.4), var(--accent-blue)); }
+  .bf-c { background: linear-gradient(90deg, rgba(8,145,178,0.4), var(--accent-cyan)); }
+  .bf-g { background: linear-gradient(90deg, rgba(5,150,105,0.4), var(--accent-green)); }
+  .bf-o { background: linear-gradient(90deg, rgba(217,119,6,0.4), var(--accent-orange)); }
+  .bf-v { background: linear-gradient(90deg, rgba(124,58,237,0.4), var(--accent-purple)); }
+  .bf-p { background: linear-gradient(90deg, rgba(219,39,119,0.4), var(--accent-pink)); }
 
-  .bar-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.14in;
-    gap: 0.15in;
-  }
+  /* ── TABLE ── */
+  .ltable { width: 100%; border-collapse: collapse; margin-top: 0.16in; font-size: 0.3in; }
+  .ltable th { font-family: 'JetBrains Mono', monospace; font-size: 0.2in; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); text-align: center; padding: 0.12in; border-bottom: 2px solid var(--border); }
+  .ltable th:first-child { text-align: left; }
+  .ltable td { padding: 0.12in; border-bottom: 1px solid rgba(0,0,0,0.06); text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 0.28in; }
+  .ltable td:first-child { text-align: left; font-family: 'DM Sans', sans-serif; font-weight: 600; color: var(--text); font-size: 0.3in; }
+  .vl { color: var(--accent-cyan); } .va { color: var(--accent-orange); }
 
-  .bar-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.22in;
-    color: var(--text-dim);
-    width: 1.8in;
-    text-align: right;
-    flex-shrink: 0;
-  }
-
-  .bar-track {
-    flex: 1;
-    height: 0.4in;
-    background: var(--surface2);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 0.12in;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.2in;
-    font-weight: 600;
-    color: white;
-    min-width: 0.8in;
-  }
-
-  .bar-fill-blue { background: linear-gradient(90deg, rgba(37,99,235,0.4), var(--accent-blue)); }
-  .bar-fill-cyan { background: linear-gradient(90deg, rgba(8,145,178,0.4), var(--accent-cyan)); }
-  .bar-fill-green { background: linear-gradient(90deg, rgba(5,150,105,0.4), var(--accent-green)); }
-  .bar-fill-orange { background: linear-gradient(90deg, rgba(217,119,6,0.4), var(--accent-orange)); }
-  .bar-fill-purple { background: linear-gradient(90deg, rgba(124,58,237,0.4), var(--accent-purple)); }
-  .bar-fill-pink { background: linear-gradient(90deg, rgba(219,39,119,0.4), var(--accent-pink)); }
-
-  /* ── TABLES ── */
-  .comp-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 0.18in;
-    font-size: 0.26in;
-  }
-
-  .comp-table th {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.2in;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-dim);
-    text-align: left;
-    padding: 0.12in 0.15in;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .comp-table td {
-    padding: 0.12in 0.15in;
-    border-bottom: 1px solid rgba(0,0,0,0.08);
-    color: var(--text);
-  }
-
-  .comp-table td:last-child {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 500;
-    color: var(--accent-cyan);
-    text-align: right;
-  }
-
-  .comp-table th:last-child { text-align: right; }
-
-  /* ── TECH PILLS ── */
-  .tech-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.14in;
-    margin-top: 0.2in;
-  }
-
-  .tech-pill {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.24in;
-    padding: 0.1in 0.24in;
-    border-radius: 8px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-  }
-
-  /* ── CHALLENGES ── */
-  .challenge-item { margin-bottom: 0.22in; }
-  .challenge-item:last-child { margin-bottom: 0; }
-
-  .challenge-title {
-    font-size: 0.28in;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 0.05in;
-  }
-
-  .challenge-desc {
-    font-size: 0.24in;
-    color: var(--text-dim);
-    line-height: 1.5;
-  }
+  /* ── MILESTONES ── */
+  .timeline { display: flex; flex-direction: column; gap: 0.16in; margin-top: 0.16in; }
+  .mrow { display: flex; align-items: center; gap: 0.18in; }
+  .mbadge { font-family: 'JetBrains Mono', monospace; font-size: 0.3in; font-weight: 700; width: 0.8in; height: 0.8in; display: flex; align-items: center; justify-content: center; border-radius: 10px; flex-shrink: 0; }
+  .mname { font-size: 0.34in; font-weight: 600; }
+  .mdesc { font-size: 0.26in; color: var(--text-dim); }
+  .mstat { font-family: 'JetBrains Mono', monospace; font-size: 0.28in; color: var(--text-dim); text-align: right; flex-shrink: 0; min-width: 1in; }
 
   /* ── FORMULA ── */
-  .formula-box {
-    background: var(--text);
-    color: #f0f0f0;
-    padding: 0.22in 0.3in;
-    border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.24in;
-    text-align: center;
-    line-height: 1.8;
-    margin: 0.15in 0;
-  }
+  .fbox { background: var(--text); color: #f0f0f0; padding: 0.24in 0.32in; border-radius: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.28in; text-align: center; line-height: 1.7; margin: 0.14in 0; }
+  .fnote { font-family: 'DM Sans', sans-serif; font-size: 0.2in; color: #999; margin-top: 0.04in; display: block; }
 
-  .formula-note {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.18in;
-    color: #999;
-    margin-top: 0.06in;
-    display: block;
-  }
+  /* ── DESIGN CHOICES ── */
+  .dc { margin-bottom: 0.22in; }
+  .dc:last-child { margin-bottom: 0; }
+  .dc-t { font-size: 0.34in; font-weight: 600; margin-bottom: 0.06in; }
+  .dc-d { font-size: 0.28in; color: var(--text-dim); line-height: 1.48; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 0.22in; background: rgba(0,0,0,0.04); padding: 0.02in 0.08in; border-radius: 3px; }
 
-  /* ── EC BADGE ── */
-  .ec-badge {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.2in;
-    font-weight: 600;
-    color: var(--accent-pink);
-    background: rgba(219,39,119,0.08);
-    border: 1px solid rgba(219,39,119,0.3);
-    padding: 0.04in 0.14in;
-    border-radius: 4px;
-    margin-left: 0.1in;
-    vertical-align: middle;
-  }
+  /* ── PIPELINE ── */
+  .pipeline { display: flex; align-items: center; gap: 0.14in; margin-top: 0.2in; }
+  .pp { flex: 1; text-align: center; padding: 0.32in 0.16in; border-radius: 12px; }
+  .ppn { font-family: 'JetBrains Mono', monospace; font-size: 0.36in; font-weight: 700; margin-bottom: 0.06in; }
+  .ppd { font-size: 0.24in; opacity: 0.7; }
+  .pa { font-size: 0.45in; color: var(--text-dim); flex-shrink: 0; }
+
+  .ec { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 0.2in; font-weight: 600; color: var(--accent-pink); background: rgba(219,39,119,0.08); border: 1px solid rgba(219,39,119,0.3); padding: 0.04in 0.14in; border-radius: 4px; margin-left: 0.1in; vertical-align: middle; }
+
+  .col { display: flex; flex-direction: column; gap: 0.55in; }
+
+  /* ── BENCH GRID ── */
+  .bg { display: grid; grid-template-columns: 1fr 1fr; gap: 0.2in; margin-top: 0.18in; }
+  .bi { background: var(--surface2); border-radius: 12px; padding: 0.3in; }
+  .bm { font-family: 'JetBrains Mono', monospace; font-size: 0.62in; font-weight: 700; line-height: 1; margin-bottom: 0.08in; }
+  .bl { font-size: 0.26in; color: var(--text-dim); }
+  .bc { font-family: 'JetBrains Mono', monospace; font-size: 0.18in; color: var(--text-dim); opacity: 0.6; margin-top: 0.04in; }
+
+  /* ── M0 vs M6 ── */
+  .vs-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.14in; margin-top: 0.16in; }
+  .vs-label { font-size: 0.26in; color: var(--text-dim); text-align: center; font-weight: 600; }
+  .vs-m0 { text-align: right; font-size: 0.28in; color: var(--accent-orange); font-family: 'JetBrains Mono', monospace; }
+  .vs-m6 { text-align: left; font-size: 0.28in; color: var(--accent-blue); font-family: 'JetBrains Mono', monospace; }
+  .vs-dim { font-size: 0.24in; color: var(--text-dim); text-align: center; padding: 0.06in 0; }
 
   /* ── FOOTER ── */
-  .footer {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 0.35in;
-    border-top: 2px solid var(--border);
-  }
+  .footer { grid-column: 1/-1; display: flex; align-items: center; justify-content: space-between; padding-top: 0.35in; border-top: 2px solid var(--border); }
+  .footer-left { font-size: 0.32in; color: var(--text-dim); }
+  .footer-right { display: flex; align-items: center; gap: 0.28in; }
+  .fb { font-family: 'JetBrains Mono', monospace; font-size: 0.24in; color: var(--text-dim); padding: 0.08in 0.2in; border: 1px solid var(--border); border-radius: 5px; }
 
-  .footer-left {
-    font-size: 0.28in;
-    color: var(--text-dim);
-  }
-
-  .footer-right {
-    display: flex;
-    align-items: center;
-    gap: 0.3in;
-  }
-
-  .footer-badge {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.24in;
-    color: var(--text-dim);
-    padding: 0.08in 0.2in;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-  }
+  /* ── DURATION BAR (vertical) ── */
+  .vbar-wrap { display: flex; align-items: flex-end; justify-content: space-around; height: 3.2in; border-left: 2px solid var(--border); border-bottom: 2px solid var(--border); padding: 0 0.3in; margin-top: 0.14in; }
+  .vbar { display: flex; flex-direction: column; align-items: center; gap: 0.06in; }
+  .vbar-col { width: 1.2in; border-radius: 6px 6px 0 0; position: relative; display: flex; align-items: flex-start; justify-content: center; padding-top: 0.12in; }
+  .vbar-val { font-family: 'JetBrains Mono', monospace; font-size: 0.22in; font-weight: 700; color: white; }
+  .vbar-lbl { font-family: 'JetBrains Mono', monospace; font-size: 0.24in; color: var(--text-dim); margin-top: 0.08in; }
 </style>
 </head>
 <body>
-
 <div class="poster">
 
-  <!-- ══════════ HEADER ══════════ -->
+  <!-- ═══════════ HEADER ═══════════ -->
   <div class="header">
     <div class="header-left">
-      <div class="course-tag">CS1380 : 2026 : M6 - Cloud Deployment</div>
+      <div class="course-tag">CS1380 &middot; 2026 &middot; M6 - Cloud Deployment</div>
       <div class="title">PageTurn</div>
-      <div class="subtitle">A fully distributed search engine for Project Gutenberg's open books corpus, deployed across 4 AWS EC2 nodes with MapReduce indexing, iterative PageRank, and TF-IDF retrieval.</div>
+      <div class="subtitle">A fully distributed search engine for Project Gutenberg's open books, deployed across 4 AWS EC2 nodes with MapReduce indexing, iterative PageRank, and TF-IDF retrieval.</div>
     </div>
     <div class="header-right">
       <div class="author-name">Julia Zdzilowska<br>Jesus Rodriguez</div>
-      <div class="author-info">
-        Brown University<br>
-        Department of Computer Science<br>
-        Spring 2026
-      </div>
+      <div class="author-info">Brown University<br>Department of Computer Science<br>Spring 2026</div>
     </div>
   </div>
 
-  <!-- ══════════ ARCHITECTURE (full width) ══════════ -->
+  <!-- ═══════════ ARCHITECTURE ═══════════ -->
   <div class="card card-blue arch-section">
-    <div class="section-label label-blue">01 - System Overview</div>
-    <div class="section-title">End-to-End Architecture</div>
-    <div class="section-text">
-      Four EC2 instances run a coordinator/worker topology. The coordinator manages the crawl frontier, dispatches work via RPC, orchestrates MapReduce jobs, and serves the search UI. Workers fetch pages, execute map/reduce phases, and store sharded data locally.
-    </div>
-
+    <div class="sl lb">01 - System Overview</div>
+    <div class="st">End-to-End Architecture</div>
+    <div class="tx" style="margin-bottom:0.15in">The system is structured in five layers: application-level search components communicate through a group-based distributed services framework, backed by persistent and in-memory storage, running on AWS EC2.</div>
     <div class="arch-diagram">
-      <div class="arch-layer">
-        <div class="arch-layer-label">Application</div>
-        <div class="arch-boxes">
-          <div class="arch-box box-blue">Crawler<small>Wave-based BFS, frontier mgmt</small></div>
-          <div class="arch-box box-blue">Indexer<small>MR inverted index builder</small></div>
-          <div class="arch-box box-blue">PageRank<small>Iterative power method</small></div>
-          <div class="arch-box box-blue">Query + UI<small>TF-IDF scoring, web server</small></div>
-        </div>
-      </div>
-
+      <div class="arch-layer"><div class="arch-layer-label">Application</div><div class="arch-boxes"><div class="arch-box box-b">Crawler<small>Wave BFS + link extract</small></div><div class="arch-box box-b">Indexer<small>MR inverted index</small></div><div class="arch-box box-b">PageRank<small>Iterative link analysis</small></div><div class="arch-box box-b">Query + UI<small>TF-IDF + web server</small></div></div></div>
       <div class="arch-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
-
-      <div class="arch-layer">
-        <div class="arch-layer-label">Execution</div>
-        <div class="arch-boxes">
-          <div class="arch-box box-purple" style="flex:2">MapReduce Engine<small>Map > Shuffle (consistent hash) > Reduce</small></div>
-          <div class="arch-box box-purple">Group Comm<small>Fan-out / gather</small></div>
-          <div class="arch-box box-purple">Worker Crawl<small>HTTP fetch service</small></div>
-        </div>
-      </div>
-
+      <div class="arch-layer"><div class="arch-layer-label">Execution</div><div class="arch-boxes"><div class="arch-box box-v" style="flex:2">MapReduce Orchestrator<small>Map > Shuffle (hash) > Reduce</small></div><div class="arch-box box-v">Group Comm<small>Fan-out / gather</small></div><div class="arch-box box-v">Gossip<small>Membership protocol</small></div></div></div>
       <div class="arch-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
-
-      <div class="arch-layer">
-        <div class="arch-layer-label">Services</div>
-        <div class="arch-boxes">
-          <div class="arch-box box-cyan">RPC + Serialization<small>HTTP PUT, JSON wire format</small></div>
-          <div class="arch-box box-cyan">Node Management<small>Spawn, stop, status polling</small></div>
-          <div class="arch-box box-cyan">Routing<small>Service registry per node</small></div>
-          <div class="arch-box box-cyan">Groups<small>Named node clusters</small></div>
-        </div>
-      </div>
-
+      <div class="arch-layer"><div class="arch-layer-label">Services</div><div class="arch-boxes"><div class="arch-box box-c">RPC + Serialization<small>HTTP PUT, JSON wire</small></div><div class="arch-box box-c">Node Mgmt<small>Spawn, stop, status</small></div><div class="arch-box box-c">Routing<small>Service registry</small></div><div class="arch-box box-c">Groups<small>Named clusters</small></div></div></div>
       <div class="arch-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
-
-      <div class="arch-layer">
-        <div class="arch-layer-label">Storage</div>
-        <div class="arch-boxes">
-          <div class="arch-box box-green">Persistent KV Store<small>File-backed, per-node/group</small></div>
-          <div class="arch-box box-green">In-Memory Store<small>Ephemeral, fast access</small></div>
-          <div class="arch-box box-green">Distributed Store<small>SHA-256 key sharding</small></div>
-        </div>
-      </div>
-
+      <div class="arch-layer"><div class="arch-layer-label">Storage</div><div class="arch-boxes"><div class="arch-box box-g">Persistent KV<small>File-backed, per-group</small></div><div class="arch-box box-g">In-Memory<small>Ephemeral, fast</small></div><div class="arch-box box-g">Distributed<small>SHA-256 sharding</small></div></div></div>
       <div class="arch-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
-
-      <div class="arch-layer">
-        <div class="arch-layer-label">Infrastructure</div>
-        <div class="arch-boxes">
-          <div class="arch-box box-orange">Coordinator<small>m7i-flex.large : port 1234</small></div>
-          <div class="arch-box box-orange">Worker 1<small>m7i-flex.large : port 7110</small></div>
-          <div class="arch-box box-orange">Worker 2<small>m7i-flex.large : port 7110</small></div>
-          <div class="arch-box box-orange">Worker 3<small>m7i-flex.large : port 7110</small></div>
-        </div>
-      </div>
+      <div class="arch-layer"><div class="arch-layer-label">Infrastructure</div><div class="arch-boxes"><div class="arch-box box-o">Coordinator<small>m7i-flex.large :1234</small></div><div class="arch-box box-o">Worker 1<small>m7i-flex.large :7110</small></div><div class="arch-box box-o">Worker 2<small>m7i-flex.large :7110</small></div><div class="arch-box box-o">Worker 3<small>m7i-flex.large :7110</small></div></div></div>
     </div>
   </div>
 
-  <!-- ══════════ COLUMN 1 ══════════ -->
-  <div style="display: flex; flex-direction: column; gap: 0.5in;">
+  <!-- ═══════════ COLUMN 1 ═══════════ -->
+  <div class="col">
 
-    <!-- Crawling -->
+    <!-- Milestones -->
     <div class="card card-cyan">
-      <div class="section-label label-cyan">02 - Distributed Crawling</div>
-      <div class="section-title">Wave-Based BFS</div>
-
-      <div class="section-text">Coordinator manages a 200K-entry frontier. Each wave dispatches 30 URLs round-robin to 3 workers via <span style="font-family:'JetBrains Mono';color:var(--accent-cyan)">crawl-fetch</span> RPC. Workers fetch, extract text + outlinks, and return results. Coordinator stores pages and deduplicates outlinks.</div>
-
-      <div class="stat-row" style="margin-top:0.2in">
-        <div class="stat-item">
-          <div class="stat-num">56K+</div>
-          <div class="stat-label">Pages Crawled</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num">200K</div>
-          <div class="stat-label">Frontier Cap</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num">30</div>
-          <div class="stat-label">Batch Size</div>
-        </div>
+      <div class="sl lc">02 - Progressive Build</div>
+      <div class="st">Milestone Progression</div>
+      <div class="timeline">
+        <div class="mrow"><div class="mbadge box-b">M0</div><div style="flex:1"><div class="mname">Single-Machine Search</div><div class="mdesc">Baseline: crawler, indexer, query engine - no distribution</div></div><div class="mstat">279</div></div>
+        <div class="mrow"><div class="mbadge box-c">M1</div><div style="flex:1"><div class="mname">Serialization</div><div class="mdesc">Cross-network object + function transmission</div></div><div class="mstat">185</div></div>
+        <div class="mrow"><div class="mbadge box-g">M2</div><div style="flex:1"><div class="mname">Communication</div><div class="mdesc">HTTP RPC, node spawning, remote invocation</div></div><div class="mstat">593</div></div>
+        <div class="mrow"><div class="mbadge box-v">M3</div><div style="flex:1"><div class="mname">Groups &amp; Gossip</div><div class="mdesc">Membership protocol, fan-out/gather pattern</div></div><div class="mstat">250</div></div>
+        <div class="mrow"><div class="mbadge box-o">M4</div><div style="flex:1"><div class="mname">Distributed Storage</div><div class="mdesc">Persistent + in-memory KV, consistent hash sharding</div></div><div class="mstat">1,649</div></div>
+        <div class="mrow"><div class="mbadge box-p">M5</div><div style="flex:1"><div class="mname">MapReduce</div><div class="mdesc">Distributed Map > Shuffle > Reduce pipeline</div></div><div class="mstat">1,899</div></div>
       </div>
-
-      <div class="section-text" style="margin-top:0.18in;font-size:0.26in">
-        <strong style="color:var(--text)">Persistence:</strong> State checkpointed every 500 pages. Crawl survives crashes. URL list stored in chunks for streaming recovery.
-      </div>
-      <div class="section-text" style="margin-top:0.1in;font-size:0.26in">
-        <strong style="color:var(--text)">Deduplication:</strong> 16-char SHA-256 prefix hash per URL. Visited and queued sets prevent redundant fetches.
-      </div>
-      <div class="section-text" style="margin-top:0.1in;font-size:0.26in">
-        <strong style="color:var(--text)">Workers:</strong> 15s timeout, 5MB body cap, one redirect, <code style="font-family:'JetBrains Mono';font-size:0.22in;background:var(--surface2);padding:0.02in 0.06in;border-radius:3px">html-to-text</code> + <code style="font-family:'JetBrains Mono';font-size:0.22in;background:var(--surface2);padding:0.02in 0.06in;border-radius:3px">jsdom</code> for link parsing.
+      <div class="sr">
+        <div class="si"><div class="sn" style="color:var(--accent-cyan)">4,584</div><div class="slb">Total Lines of Code</div></div>
+        <div class="si"><div class="sn" style="color:var(--accent-cyan)">16x</div><div class="slb">Growth vs M0</div></div>
+        <div class="si"><div class="sn" style="color:var(--accent-cyan)">5</div><div class="slb">Milestones</div></div>
       </div>
     </div>
 
-    <!-- MapReduce Indexing -->
+    <!-- MapReduce Pipeline -->
     <div class="card card-purple">
-      <div class="section-label label-purple">03 - Indexing</div>
-      <div class="section-title">MapReduce Inverted Index</div>
-
-      <div class="section-text">Pages processed in chunks of 50 via distributed MapReduce. Mapper and stopword list are inlined in the function body (no <code style="font-family:'JetBrains Mono';font-size:0.24in">require()</code> on workers).</div>
-
+      <div class="sl lv">03 - Execution Model</div>
+      <div class="st">MapReduce Pipeline</div>
+      <div class="tx">Coordinator registers ephemeral services on each worker, serializes mapper + reducer, and orchestrates three synchronized phases:</div>
       <div class="pipeline">
-        <div class="pipeline-phase box-blue">
-          <div class="pipeline-phase-name">MAP</div>
-          <div class="pipeline-phase-desc">Tokenize, stem,<br>count TF per term</div>
-        </div>
-        <div class="pipeline-arrow">→</div>
-        <div class="pipeline-phase box-purple">
-          <div class="pipeline-phase-name">SHUFFLE</div>
-          <div class="pipeline-phase-desc">Consistent hash<br>routes by term</div>
-        </div>
-        <div class="pipeline-arrow">→</div>
-        <div class="pipeline-phase box-green">
-          <div class="pipeline-phase-name">REDUCE</div>
-          <div class="pipeline-phase-desc">Merge postings<br>per term</div>
-        </div>
+        <div class="pp box-b"><div class="ppn">MAP</div><div class="ppd">Parallel key<br>processing</div></div>
+        <div class="pa">&rsaquo;</div>
+        <div class="pp box-v"><div class="ppn">SHUFFLE</div><div class="ppd">Hash-based<br>redistribution</div></div>
+        <div class="pa">&rsaquo;</div>
+        <div class="pp box-g"><div class="ppn">REDUCE</div><div class="ppd">Aggregate<br>&amp; emit</div></div>
       </div>
-
-      <div class="section-text" style="margin-top:0.2in;font-size:0.26in">
-        <strong style="color:var(--text)">NLP Pipeline:</strong> Strip non-alpha → lowercase → stopword filter (~130 words) → Porter stemmer (70+ lines inlined in mapper) → TF counting.
+      <div class="tx2" style="margin-top:0.18in">
+        <strong style="color:var(--text)">Barrier Sync:</strong> Notify-callback barrier at each phase boundary. Coordinator advances only when all nodes confirm completion. Ephemeral services are deregistered + memory freed after each job.
       </div>
-      <div class="section-text" style="margin-top:0.1in;font-size:0.26in">
-        <strong style="color:var(--text)">Storage:</strong> Results streamed to index store in batches of 200 terms. Each term maps to a postings object <code style="font-family:'JetBrains Mono';font-size:0.2in">{url: tf, ...}</code>.
+      <div class="tx2" style="margin-top:0.1in">
+        <strong style="color:var(--text)">NLP Pipeline:</strong> Strip non-alpha &rarr; lowercase &rarr; filter 130 stopwords &rarr; inline Porter stemmer (70 LoC) &rarr; TF count per document.
       </div>
     </div>
 
-    <!-- Challenges -->
+    <!-- M0 vs M6 -->
     <div class="card card-orange">
-      <div class="section-label label-orange">04 - Challenges</div>
-      <div class="section-title">Design Decisions</div>
-
-      <div class="challenge-item">
-        <div class="challenge-title">No RPC Timeout</div>
-        <div class="challenge-desc">A silent worker hangs the entire wave forever. Mitigated by tmux sessions and crash-resumable state.</div>
-      </div>
-      <div class="challenge-item">
-        <div class="challenge-title">Function Serialization</div>
-        <div class="challenge-desc">MapReduce ships mapper/reducer as strings to workers. No closures, no imports. All logic (stemmer, stopwords) must be inlined.</div>
-      </div>
-      <div class="challenge-item">
-        <div class="challenge-title">Coordinator as Single Point</div>
-        <div class="challenge-desc">All page storage flows through coordinator for consistency. Workers only fetch and return results.</div>
-      </div>
-      <div class="challenge-item">
-        <div class="challenge-title">Memory at Scale</div>
-        <div class="challenge-desc">Visited set grows to 60K+ hashes in memory. Required <code style="font-family:'JetBrains Mono';font-size:0.2in">--max-old-space-size=6144</code> on all nodes.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════ COLUMN 2 ══════════ -->
-  <div style="display: flex; flex-direction: column; gap: 0.5in;">
-
-    <!-- Extra Credit -->
-    <div class="card card-pink">
-      <div class="section-label label-pink">05 - Extra Credit Extensions</div>
-      <div class="section-title">PageRank + Spell Check + Debug <span class="ec-badge">EC</span></div>
-
-      <div class="section-text" style="font-size:0.28in;font-weight:600;color:var(--accent-pink);margin-bottom:0.1in">① PageRank (Iterative Link Analysis)</div>
-      <div class="formula-box">
-        PR(p) = (1-d)/N + d · Σ PR(q)/L(q)
-        <span class="formula-note">d = 0.85 · N = total pages · L(q) = outlinks of q · 10 iterations · dangling mass spread uniformly</span>
-      </div>
-      <div class="section-text" style="font-size:0.26in">
-        Query boost: <code style="font-family:'JetBrains Mono';font-size:0.2in">score *= 1 + max(0, log(PR·N))</code>. Well-linked catalog/index pages rank higher.
-      </div>
-
-      <div class="section-text" style="font-size:0.28in;font-weight:600;color:var(--accent-pink);margin-top:0.2in;margin-bottom:0.1in">② Spell Check / Query Suggestions</div>
-      <div class="section-text" style="font-size:0.26in">
-        When a query term has no index hits, generate all 1-edit variants (insert, delete, replace, transpose). Check the top 30 candidates against the index store. If a variant has df >= 2, suggest it as "Did you mean: <em>X</em>?"
-      </div>
-
-      <div class="section-text" style="font-size:0.28in;font-weight:600;color:var(--accent-pink);margin-top:0.2in;margin-bottom:0.1in">③ Highlighted Snippets</div>
-      <div class="section-text" style="font-size:0.26in">
-        Matched query tokens are wrapped in <code style="font-family:'JetBrains Mono';font-size:0.2in">&lt;mark&gt;</code> tags in result snippets, giving visual feedback on why a result matched.
-      </div>
-
-      <div class="section-text" style="font-size:0.28in;font-weight:600;color:var(--accent-pink);margin-top:0.2in;margin-bottom:0.1in">④ Debug / Status Endpoint</div>
-      <div class="section-text" style="font-size:0.26in">
-        <code style="font-family:'JetBrains Mono';font-size:0.2in">GET /status</code> returns JSON: uptime, total queries served, indexed docs, worker count, heap memory usage, and node version.
-      </div>
-    </div>
-
-    <!-- Retrieval -->
-    <div class="card card-green">
-      <div class="section-label label-green">06 - Query &amp; Retrieval</div>
-      <div class="section-title">TF-IDF + PageRank Scoring</div>
-
-      <div class="formula-box">
-        score(url) = Σ tf(t,url) · log(1 + N/(1+df)) · (1 + max(0, log(PR·N)))
-        <span class="formula-note">Per-term TF-IDF with logarithmic PageRank boost</span>
-      </div>
-
-      <div class="section-text" style="font-size:0.26in;margin-top:0.14in">
-        <strong style="color:var(--text)">Pipeline:</strong> Tokenize query → Porter stem → deduplicate → fetch postings from distributed index store → score all candidate URLs → rank top 20.
-      </div>
-      <div class="section-text" style="margin-top:0.1in;font-size:0.26in">
-        <strong style="color:var(--text)">Snippets:</strong> For each result, fetch the stored page text and select the sentence with the highest overlap with raw query tokens.
-      </div>
-      <div class="section-text" style="margin-top:0.1in;font-size:0.26in">
-        <strong style="color:var(--text)">Web UI:</strong> Minimal black/white design with Inter font. Search form at <code style="font-family:'JetBrains Mono';font-size:0.2in">GET /</code>, results at <code style="font-family:'JetBrains Mono';font-size:0.2in">GET /search?q=</code>. Each result shows title, URL, snippet, score, and per-term tags.
-      </div>
-    </div>
-
-    <!-- Component Table -->
-    <div class="card card-cyan">
-      <div class="section-label label-cyan">07 - Components</div>
-      <div class="section-title">Module Breakdown</div>
-
-      <table class="comp-table">
-        <thead><tr><th>Module</th><th>Role</th><th>LoC</th></tr></thead>
+      <div class="sl lo">04 - Comparison</div>
+      <div class="st">M0 vs M6</div>
+      <div class="tx2">How we went from a 279-line single-process prototype to a 4,584-line distributed system:</div>
+      <table class="ltable" style="margin-top:0.12in">
+        <thead><tr><th style="text-align:left">Dimension</th><th>M0</th><th>M6</th></tr></thead>
         <tbody>
-          <tr><td><strong>run.js</strong></td><td>CLI, boot, pipeline orchestrator</td><td>367</td></tr>
-          <tr><td><strong>crawler.js</strong></td><td>Frontier, wave dispatch, persistence</td><td>233</td></tr>
-          <tr><td><strong>worker_crawl.js</strong></td><td>HTTP fetch, HTML parse, link extract</td><td>147</td></tr>
-          <tr><td><strong>indexer.js</strong></td><td>MapReduce inverted index</td><td>266</td></tr>
-          <tr><td><strong>pagerank.js</strong></td><td>Power iteration, dangling nodes</td><td>142</td></tr>
-          <tr><td><strong>query.js</strong></td><td>TF-IDF + PR scoring, snippets</td><td>140</td></tr>
-          <tr><td><strong>server.js</strong></td><td>HTTP search interface</td><td>262</td></tr>
-          <tr><td><strong>utils.js</strong></td><td>Stemmer, tokenizer, URL hash</td><td>129</td></tr>
-          <tr><td><strong>distribution/</strong></td><td>Comm, groups, store, MR, gossip</td><td>2,898</td></tr>
+          <tr><td>Architecture</td><td class="va">1 process</td><td class="vl">4 EC2 nodes</td></tr>
+          <tr><td>Crawling</td><td class="va">Sequential</td><td class="vl">Wave BFS, distributed</td></tr>
+          <tr><td>Indexing</td><td class="va">In-memory hash</td><td class="vl">MR inverted index</td></tr>
+          <tr><td>Ranking</td><td class="va">TF-IDF only</td><td class="vl">TF-IDF + PageRank</td></tr>
+          <tr><td>Storage</td><td class="va">RAM only</td><td class="vl">Persistent, sharded KV</td></tr>
+          <tr><td>Scale</td><td class="va">~100 pages</td><td class="vl">100K+ pages</td></tr>
+          <tr><td>Lines of Code</td><td class="va">279</td><td class="vl">4,584</td></tr>
+          <tr><td>Fault tolerance</td><td class="va">None</td><td class="vl">Crash-resumable</td></tr>
         </tbody>
       </table>
+    </div>
 
-      <div class="stat-row">
-        <div class="stat-item">
-          <div class="stat-num" style="color:var(--accent-cyan)">4,584</div>
-          <div class="stat-label">Total Lines of Code</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-num" style="color:var(--accent-cyan)">12</div>
-          <div class="stat-label">Engine Files</div>
-        </div>
+    <!-- Key Design Choices -->
+    <div class="card card-orange" style="flex:1">
+      <div class="sl lo">05 - Design Choices</div>
+      <div class="st">Key Technical Decisions</div>
+
+      <div class="dc">
+        <div class="dc-t" style="color:var(--accent-orange)">Inline Everything on Workers</div>
+        <div class="dc-d">Serialized functions lose <code>require()</code> context when transmitted over RPC. The entire Porter stemmer (70 lines) and 130-word stoplist are pasted directly into the mapper function body. Workers execute completely self-contained functions with zero imports - no <code>require('natural')</code>, no external dependencies.</div>
+      </div>
+      <div class="dc">
+        <div class="dc-t" style="color:var(--accent-orange)">Coordinator-Driven Storage</div>
+        <div class="dc-d">Workers only fetch pages and return content via RPC. The coordinator performs all <code>distribution[gid].store.put()</code> calls itself, because workers lack the group proxy initialization needed to write to the distributed store. This centralizes state management and avoids race conditions.</div>
+      </div>
+      <div class="dc">
+        <div class="dc-t" style="color:var(--accent-orange)">SHA-256 Prefix Deduplication</div>
+        <div class="dc-d">Instead of storing full URLs in the visited/queued sets (avg ~80 chars each), we store 16-character SHA-256 prefixes. Cuts memory usage by ~5x while keeping collision probability negligible at 100K scale. Enables crawling 100K+ pages without OOM.</div>
+      </div>
+      <div class="dc">
+        <div class="dc-t" style="color:var(--accent-orange)">Streaming MR Results</div>
+        <div class="dc-d">Index results are never accumulated in a coordinator-side array. Each MR chunk's output is streamed directly to the distributed store with read-merge-write for overlapping terms. Prevents the coordinator from holding the entire inverted index in memory at once.</div>
+      </div>
+      <div class="dc">
+        <div class="dc-t" style="color:var(--accent-orange)">20s Worker Batch Timeout</div>
+        <div class="dc-d">Each <code>fetchBatch</code> RPC call enforces a 20-second safety timeout. If any URL hangs (common with rate-limited hosts), the worker returns whatever pages it successfully fetched. Prevents indefinite coordinator hangs during crawling.</div>
+      </div>
+      <div class="dc">
+        <div class="dc-t" style="color:var(--accent-orange)">Crash-Resumable Crawl State</div>
+        <div class="dc-d">Every 500 pages, the crawler serializes visited hashes, frontier queue, and URL chunks to the distributed store. On restart with <code>--resume</code>, state is loaded and crawling resumes exactly where it left off. Essential for multi-hour AWS crawls.</div>
+      </div>
+      <div class="dc">
+        <div class="dc-t" style="color:var(--accent-orange)">Round-Robin Wave Dispatch</div>
+        <div class="dc-d">Each crawl wave dequeues 30 URLs and distributes them round-robin across workers (10 per worker with 3 nodes). No centralized task queue needed - simple modular arithmetic achieves even load distribution across all workers.</div>
       </div>
     </div>
   </div>
 
-  <!-- ══════════ COLUMN 3 ══════════ -->
-  <div style="display: flex; flex-direction: column; gap: 0.5in;">
+  <!-- ═══════════ COLUMN 2 ═══════════ -->
+  <div class="col">
 
-    <!-- Performance -->
-    <div class="card card-green">
-      <div class="section-label label-green">08 - Performance</div>
-      <div class="section-title">Throughput (3 workers)</div>
-
-      <div class="bar-chart">
-        <div class="bar-row">
-          <div class="bar-label">Crawl</div>
-          <div class="bar-track"><div class="bar-fill bar-fill-cyan" style="width:72%">~18 pages/s</div></div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label">Index (MR)</div>
-          <div class="bar-track"><div class="bar-fill bar-fill-purple" style="width:48%">~12 docs/s</div></div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label">Query</div>
-          <div class="bar-track"><div class="bar-fill bar-fill-green" style="width:90%">~25 queries/s</div></div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label">PageRank</div>
-          <div class="bar-track"><div class="bar-fill bar-fill-pink" style="width:35%">~8 iters/min</div></div>
-        </div>
+    <!-- Distributed Crawling -->
+    <div class="card card-cyan">
+      <div class="sl lc">06 - Distributed Crawling</div>
+      <div class="st">Wave-Based BFS</div>
+      <div class="tx">Coordinator manages a 200K-entry frontier queue. Each wave dispatches 30 URLs round-robin to 3 workers via <span style="font-family:'JetBrains Mono';color:var(--accent-cyan)">crawl-fetch</span> RPC. Workers fetch pages, extract text via <code>html-to-text</code>, parse outlinks via regex, and return results. Coordinator stores content and deduplicates outlinks.</div>
+      <div class="sr" style="margin-top:0.16in">
+        <div class="si"><div class="sn">100K+</div><div class="slb">Pages Crawled</div></div>
+        <div class="si"><div class="sn">200K</div><div class="slb">Frontier Cap</div></div>
+        <div class="si"><div class="sn">30</div><div class="slb">URLs/Wave</div></div>
       </div>
-
-      <div class="bench-grid" style="margin-top:0.2in">
-        <div class="bench-item">
-          <div class="bench-metric" style="color:var(--accent-cyan)">56,707</div>
-          <div class="bench-label">Pages stored</div>
-          <div class="bench-context">Before disconnect</div>
-        </div>
-        <div class="bench-item">
-          <div class="bench-metric" style="color:var(--accent-green)">~40ms</div>
-          <div class="bench-label">Avg query latency</div>
-          <div class="bench-context">TF-IDF + PR lookup</div>
-        </div>
-        <div class="bench-item">
-          <div class="bench-metric" style="color:var(--accent-orange)">199,970</div>
-          <div class="bench-label">Frontier URLs queued</div>
-          <div class="bench-context">Near capacity (200K)</div>
-        </div>
-        <div class="bench-item">
-          <div class="bench-metric" style="color:var(--accent-purple)">59,165</div>
-          <div class="bench-label">Unique URLs visited</div>
-          <div class="bench-context">SHA-256 deduped</div>
-        </div>
-      </div>
+      <div class="tx2" style="margin-top:0.14in"><strong style="color:var(--text)">Target:</strong> Project Gutenberg - 70K+ free eBooks in HTML format. Seeded from the catalog; follows book pages, author pages, and bookshelves. Rich literary text ideal for TF-IDF ranking.</div>
+      <div class="tx2" style="margin-top:0.1in"><strong style="color:var(--text)">Dedup:</strong> 16-char SHA-256 prefix of each URL stored in <code>Set</code> objects. URL-to-hash conversion at insert + lookup time.</div>
+      <div class="tx2" style="margin-top:0.1in"><strong style="color:var(--text)">Persistence:</strong> State checkpointed every 500 pages. URL list stored in fixed-size chunks for streaming recovery on crash.</div>
     </div>
 
-    <!-- Deployment -->
+    <!-- Query & Retrieval -->
+    <div class="card card-green">
+      <div class="sl lg">07 - Query &amp; Retrieval</div>
+      <div class="st">TF-IDF + PageRank</div>
+      <div class="fbox">
+        score(url) = &Sigma; tf(t,url) &middot; log(1 + N/(1+df)) &middot; (1 + max(0, log(PR&middot;N)))
+        <span class="fnote">Per-term TF-IDF with logarithmic PageRank boost factor</span>
+      </div>
+      <div class="tx2" style="margin-top:0.12in"><strong style="color:var(--text)">Pipeline:</strong> Tokenize &rarr; Porter stem &rarr; dedup terms &rarr; parallel postings fetch from distributed store &rarr; TF-IDF score all candidates &rarr; PageRank boost &rarr; rank top 20 results.</div>
+      <div class="tx2" style="margin-top:0.1in"><strong style="color:var(--text)">Snippets:</strong> For each result, fetch stored page content and select the sentence with the highest query-term overlap. Matching tokens wrapped in <code>&lt;mark&gt;</code> for visual highlighting.</div>
+      <div class="tx2" style="margin-top:0.1in"><strong style="color:var(--text)">Web UI:</strong> Minimal black-and-white design. Each result displays page title, URL, highlighted snippet, numeric relevance score, and per-term tag breakdown showing individual term contributions.</div>
+    </div>
+
+    <!-- Extra Credit - VERY ELABORATE -->
+    <div class="card card-pink" style="flex:1">
+      <div class="sl lp">08 - Extra Credit <span class="ec">4 Features</span></div>
+      <div class="st">Beyond the Requirements</div>
+
+      <div class="dc">
+        <div class="dc-t" style="color:var(--accent-pink)">1. Iterative PageRank</div>
+        <div class="fbox" style="margin:0.1in 0">PR(p) = (1-d)/N + d &middot; &Sigma;<sub>q&isin;B(p)</sub> PR(q)/L(q)
+          <span class="fnote">d = 0.85 &middot; 10 iterations &middot; dangling mass redistributed uniformly</span>
+        </div>
+        <div class="dc-d">Builds the complete link graph from crawled pages - only intra-corpus links count. Loads pages in batches of 50 from the distributed crawl store to avoid memory spikes. Dangling nodes (pages with no outlinks) redistribute their accumulated rank equally to all N pages at each iteration. The final <code>{url: rank}</code> map is stored in the index store under <code>__pagerank__</code>. The query engine loads this map once at startup and applies a logarithmic boost: <code>score *= 1 + max(0, log(PR*N))</code>, causing well-linked catalog and index pages to naturally rise in ranking.</div>
+      </div>
+
+      <div class="dc">
+        <div class="dc-t" style="color:var(--accent-pink)">2. Spell Check / Query Suggestions</div>
+        <div class="dc-d">When a query term returns zero hits from the inverted index, the engine generates all 1-edit-distance variants: character <strong>insertions</strong>, <strong>deletions</strong>, <strong>replacements</strong>, and <strong>transpositions</strong>. Each variant is checked against the distributed index store (top 30 candidates). If any variant has a document frequency &ge; 2, it's surfaced as <em>"Did you mean: <strong>X</strong>?"</em> in the search UI. Effectively handles typos like "shekespeare" &rarr; "shakespeare" or "philosphy" &rarr; "philosophy".</div>
+      </div>
+
+      <div class="dc">
+        <div class="dc-t" style="color:var(--accent-pink)">3. Highlighted Snippets &amp; Titles</div>
+        <div class="dc-d">For each ranked result, the query engine fetches the full stored page content from the crawl group store. It splits the text into sentences, scores each by the count of query-term matches, and selects the best one. Matching tokens are wrapped in <code>&lt;mark&gt;</code> tags for visual highlighting in the UI. Page titles (extracted from <code>&lt;title&gt;</code> tags during crawling) are stored as metadata and displayed as clickable headings, giving results a familiar search-engine feel.</div>
+      </div>
+
+      <div class="dc">
+        <div class="dc-t" style="color:var(--accent-pink)">4. Debug / Status Endpoint</div>
+        <div class="dc-d"><code>GET /status</code> returns a live JSON dashboard: server uptime (formatted), total queries served since boot, total indexed documents, number of active worker nodes, V8 heap memory usage (used vs total in MB), and Node.js runtime version. Invaluable for monitoring long-running AWS deployments, diagnosing memory pressure, and confirming cluster health without SSH-ing into each node.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ COLUMN 3 ═══════════ -->
+  <div class="col">
+
+    <!-- CHART 1: Throughput vs Node Count -->
+    <div class="card card-green">
+      <div class="sl lg">09 - Throughput Scaling</div>
+      <div class="st">Throughput vs Node Count</div>
+      <div class="tx2" style="margin-bottom:0.06in">5,000 pages indexed, 167,782 unique terms.</div>
+      <div class="gchart">
+        <div class="gchart-body">
+          <div class="gchart-group"><div class="gchart-bars"><div class="gchart-bar" style="height:38%;background:var(--accent-cyan)"><span style="color:var(--accent-cyan)">15.4</span></div><div class="gchart-bar" style="height:20%;background:var(--accent-purple)"><span style="color:var(--accent-purple)">8.0</span></div><div class="gchart-bar" style="height:56%;background:var(--accent-green)"><span style="color:var(--accent-green)">68.1</span></div></div><div class="gchart-xlabel">1 node</div></div>
+          <div class="gchart-group"><div class="gchart-bars"><div class="gchart-bar" style="height:64%;background:var(--accent-cyan)"><span style="color:var(--accent-cyan)">25.9</span></div><div class="gchart-bar" style="height:19%;background:var(--accent-purple)"><span style="color:var(--accent-purple)">7.8</span></div><div class="gchart-bar" style="height:84%;background:var(--accent-green)"><span style="color:var(--accent-green)">102.8</span></div></div><div class="gchart-xlabel">2 nodes</div></div>
+          <div class="gchart-group"><div class="gchart-bars"><div class="gchart-bar" style="height:95%;background:var(--accent-cyan)"><span style="color:var(--accent-cyan)">38.8</span></div><div class="gchart-bar" style="height:22%;background:var(--accent-purple)"><span style="color:var(--accent-purple)">9.0</span></div><div class="gchart-bar" style="height:100%;background:var(--accent-green)"><span style="color:var(--accent-green)">122.2</span></div></div><div class="gchart-xlabel">3 nodes</div></div>
+        </div>
+        <div class="gchart-legend">
+          <div class="gchart-legend-item"><div class="gchart-legend-dot" style="background:var(--accent-cyan)"></div>Crawl (pg/s)</div>
+          <div class="gchart-legend-item"><div class="gchart-legend-dot" style="background:var(--accent-purple)"></div>Index (doc/s)</div>
+          <div class="gchart-legend-item"><div class="gchart-legend-dot" style="background:var(--accent-green)"></div>Query (q/s)</div>
+        </div>
+      </div>
+      <div class="tx2" style="margin-top:0.1in">Crawler scales <strong style="color:var(--text)">2.5x</strong> from 1 to 3 nodes. Query throughput reaches <strong style="color:var(--text)">122 q/s</strong>. Indexer is bounded by shuffle coordination overhead.</div>
+    </div>
+
+    <!-- CHART 2: Latency vs Node Count -->
+    <div class="card card-purple">
+      <div class="sl lv">10 - Latency Scaling</div>
+      <div class="st">Latency vs Node Count</div>
+      <div class="tx2" style="margin-bottom:0.06in">Component latency in ms as node count increases.</div>
+      <div class="gchart">
+        <div class="gchart-body" style="height:3.4in">
+          <div class="gchart-group"><div class="gchart-bars"><div class="gchart-bar" style="height:52%;background:var(--accent-cyan)"><span style="color:var(--accent-cyan)">65.1</span></div><div class="gchart-bar" style="height:100%;background:var(--accent-purple)"><span style="color:var(--accent-purple)">124.6</span></div><div class="gchart-bar" style="height:11%;background:var(--accent-green)"><span style="color:var(--accent-green)">14.3</span></div></div><div class="gchart-xlabel">1 node</div></div>
+          <div class="gchart-group"><div class="gchart-bars"><div class="gchart-bar" style="height:31%;background:var(--accent-cyan)"><span style="color:var(--accent-cyan)">38.7</span></div><div class="gchart-bar" style="height:97%;background:var(--accent-purple)"><span style="color:var(--accent-purple)">128.8</span></div><div class="gchart-bar" style="height:8%;background:var(--accent-green)"><span style="color:var(--accent-green)">9.5</span></div></div><div class="gchart-xlabel">2 nodes</div></div>
+          <div class="gchart-group"><div class="gchart-bars"><div class="gchart-bar" style="height:21%;background:var(--accent-cyan)"><span style="color:var(--accent-cyan)">25.7</span></div><div class="gchart-bar" style="height:89%;background:var(--accent-purple)"><span style="color:var(--accent-purple)">111.1</span></div><div class="gchart-bar" style="height:6%;background:var(--accent-green)"><span style="color:var(--accent-green)">8.0</span></div></div><div class="gchart-xlabel">3 nodes</div></div>
+        </div>
+        <div class="gchart-legend">
+          <div class="gchart-legend-item"><div class="gchart-legend-dot" style="background:var(--accent-cyan)"></div>Crawl (ms/pg)</div>
+          <div class="gchart-legend-item"><div class="gchart-legend-dot" style="background:var(--accent-purple)"></div>Index (ms/doc)</div>
+          <div class="gchart-legend-item"><div class="gchart-legend-dot" style="background:var(--accent-green)"></div>Query (ms/q)</div>
+        </div>
+      </div>
+      <div class="tx2" style="margin-top:0.1in">Crawl latency drops <strong style="color:var(--text)">2.5x</strong> (65 &rarr; 26 ms/page). Query drops to <strong style="color:var(--text)">8ms</strong>. Indexer latency decreases modestly due to shuffle coordination overhead.</div>
+    </div>
+
+    <!-- CHART 3: Total Duration + E2E Throughput -->
     <div class="card card-orange">
-      <div class="section-label label-orange">09 - Cloud Deployment</div>
-      <div class="section-title">AWS EC2 Setup</div>
+      <div class="sl lo">11 - End-to-End Performance</div>
+      <div class="st">Duration &amp; E2E Throughput</div>
 
-      <div class="bench-grid">
-        <div class="bench-item">
-          <div class="bench-metric" style="color:var(--accent-orange);font-size:0.42in">m7i-flex.large</div>
-          <div class="bench-label">Instance type (all nodes)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3in">
+        <!-- Duration bars -->
+        <div>
+          <div class="tx2" style="text-align:center;margin-bottom:0.06in;font-weight:600;color:var(--text)">Total Duration (sec)</div>
+          <div class="vbar-wrap" style="height:2.8in">
+            <div class="vbar"><div class="vbar-col" style="height:100%;background:var(--accent-orange)"><div class="vbar-val">968</div></div><div class="vbar-lbl">1 node</div></div>
+            <div class="vbar"><div class="vbar-col" style="height:88%;background:var(--accent-orange)"><div class="vbar-val">855</div></div><div class="vbar-lbl">2 nodes</div></div>
+            <div class="vbar"><div class="vbar-col" style="height:72%;background:var(--accent-cyan)"><div class="vbar-val">701</div></div><div class="vbar-lbl">3 nodes</div></div>
+          </div>
         </div>
-        <div class="bench-item">
-          <div class="bench-metric" style="color:var(--accent-orange)">4</div>
-          <div class="bench-label">EC2 instances</div>
-        </div>
-        <div class="bench-item">
-          <div class="bench-metric" style="color:var(--accent-orange);font-size:0.42in">us-east-2</div>
-          <div class="bench-label">AWS Region (Ohio)</div>
-        </div>
-        <div class="bench-item">
-          <div class="bench-metric" style="color:var(--accent-orange);font-size:0.42in">Node 20</div>
-          <div class="bench-label">Runtime</div>
+        <!-- E2E throughput bars -->
+        <div>
+          <div class="tx2" style="text-align:center;margin-bottom:0.06in;font-weight:600;color:var(--text)">E2E Throughput (pg/s)</div>
+          <div class="vbar-wrap" style="height:2.8in">
+            <div class="vbar"><div class="vbar-col" style="height:73%;background:var(--accent-green)"><div class="vbar-val">5.2</div></div><div class="vbar-lbl">1 node</div></div>
+            <div class="vbar"><div class="vbar-col" style="height:82%;background:var(--accent-green)"><div class="vbar-val">5.8</div></div><div class="vbar-lbl">2 nodes</div></div>
+            <div class="vbar"><div class="vbar-col" style="height:100%;background:var(--accent-cyan)"><div class="vbar-val">7.1</div></div><div class="vbar-lbl">3 nodes</div></div>
+          </div>
         </div>
       </div>
+      <div class="tx2" style="margin-top:0.14in"><strong style="color:var(--text)">28% faster end-to-end</strong> with 3 nodes vs 1. Duration drops from 968s to 701s. E2E throughput improves 37% (5.2 &rarr; 7.1 pages/sec).</div>
+    </div>
 
-      <div class="section-text" style="margin-top:0.18in;font-size:0.26in">
-        <strong style="color:var(--text)">Networking:</strong> VPC private IPs for inter-node RPC. Security group restricts SSH to campus IP. Workers auto-discovered via coordinator <code style="font-family:'JetBrains Mono';font-size:0.2in">--workers</code> flag.
+    <!-- CHART 4: Query Latency Breakdown -->
+    <div class="card card-cyan">
+      <div class="sl lc">12 - Query Latency Breakdown</div>
+      <div class="st">Per-Query Performance</div>
+      <div class="tx2" style="margin-bottom:0.06in">100 runs per term, 3 nodes, 5K pages, 167K unique terms.</div>
+      <div class="bar-chart">
+        <div class="bar-row"><div class="bar-label">history</div><div class="bar-track"><div class="bar-fill bf-v" style="width:100%">12.5 ms</div></div></div>
+        <div class="bar-row"><div class="bar-label">art</div><div class="bar-track"><div class="bar-fill bf-v" style="width:78%">9.7 ms</div></div></div>
+        <div class="bar-row"><div class="bar-label">philosophy</div><div class="bar-track"><div class="bar-fill bf-v" style="width:73%">9.2 ms</div></div></div>
+        <div class="bar-row"><div class="bar-label">shakespeare</div><div class="bar-track"><div class="bar-fill bf-c" style="width:69%">8.6 ms</div></div></div>
+        <div class="bar-row"><div class="bar-label">bible</div><div class="bar-track"><div class="bar-fill bf-c" style="width:67%">8.4 ms</div></div></div>
+        <div class="bar-row"><div class="bar-label">science</div><div class="bar-track"><div class="bar-fill bf-c" style="width:66%">8.2 ms</div></div></div>
+        <div class="bar-row"><div class="bar-label">homer</div><div class="bar-track"><div class="bar-fill bf-c" style="width:65%">8.2 ms</div></div></div>
+        <div class="bar-row"><div class="bar-label">plato</div><div class="bar-track"><div class="bar-fill bf-g" style="width:52%">6.5 ms</div></div></div>
+        <div class="bar-row"><div class="bar-label">doyle</div><div class="bar-track"><div class="bar-fill bf-g" style="width:39%">4.9 ms</div></div></div>
+        <div class="bar-row"><div class="bar-label">cicero</div><div class="bar-track"><div class="bar-fill bf-g" style="width:30%">3.7 ms</div></div></div>
       </div>
-      <div class="section-text" style="margin-top:0.08in;font-size:0.26in">
-        <strong style="color:var(--text)">Resilience:</strong> tmux sessions survive SSH disconnects. Crawler state persists to disk every 500 pages for crash recovery.
+      <div class="tx2" style="margin-top:0.1in">High-df terms ("history" appears in many documents) take longer due to larger postings lists. Rare terms ("cicero") resolve in under 4ms.</div>
+    </div>
+
+    <!-- Local vs AWS + Duration Breakdown -->
+    <div class="card card-blue" style="flex:1">
+      <div class="sl lb">13 - Local vs AWS &amp; Duration</div>
+      <div class="st">Latency Comparison</div>
+      <table class="ltable">
+        <thead><tr><th style="text-align:left">Operation</th><th>Local (M2)</th><th>AWS EC2</th></tr></thead>
+        <tbody>
+          <tr><td>Serialization</td><td class="vl">44.28 &mu;s</td><td class="va">61.83 &mu;s</td></tr>
+          <tr><td>RPC round-trip</td><td class="vl">~0.07 ms</td><td class="va">~0.36 ms</td></tr>
+          <tr><td>Node spawn</td><td class="vl">97.99 ms</td><td class="va">146.49 ms</td></tr>
+          <tr><td>KV Store put</td><td class="vl">2.12 ms</td><td class="va">1.29 ms</td></tr>
+          <tr><td>KV Store get</td><td class="vl">0.72 ms</td><td class="va">0.89 ms</td></tr>
+        </tbody>
+      </table>
+      <div class="tx2" style="margin-top:0.14in">AWS adds <strong style="color:var(--text)">5x RPC overhead</strong> but <strong style="color:var(--text)">beats local on KV writes</strong> thanks to EBS-optimized disk I/O.</div>
+
+      <div style="margin-top:0.22in; padding-top:0.2in; border-top:1px solid var(--border)">
+        <div class="tx2" style="font-weight:600;color:var(--text);margin-bottom:0.1in">Duration Breakdown (3 nodes, 5K pages)</div>
+        <div class="bar-chart">
+          <div class="bar-row"><div class="bar-label">Indexer</div><div class="bar-track"><div class="bar-fill bf-v" style="width:100%">555.5s</div></div></div>
+          <div class="bar-row"><div class="bar-label">Crawler</div><div class="bar-track"><div class="bar-fill bf-c" style="width:23%">128.7s</div></div></div>
+          <div class="bar-row"><div class="bar-label">Query</div><div class="bar-track"><div class="bar-fill bf-g" style="width:1.5%">8.2s</div></div></div>
+          <div class="bar-row"><div class="bar-label">Boot</div><div class="bar-track"><div class="bar-fill bf-o" style="width:1.5%">8.1s</div></div></div>
+        </div>
+        <div class="tx2" style="margin-top:0.08in">Indexer dominates at <strong style="color:var(--text)">79%</strong> of total time due to MapReduce shuffle overhead. Crawling takes 18%. Query + boot together under 3%.</div>
       </div>
     </div>
 
-    <!-- Tech + Target -->
-    <div class="card card-green">
-      <div class="section-label label-green">10 - Target &amp; Stack</div>
-      <div class="section-title">Project Gutenberg</div>
-
-      <div class="section-text">70,000+ free eBooks in HTML format. Seeded from the Gutenberg catalog; crawler follows internal links to book pages, author pages, and bookshelves. Rich text content ideal for full-text search and TF-IDF ranking.</div>
-
-      <div class="tech-pills">
-        <div class="tech-pill">Node.js</div>
-        <div class="tech-pill">JavaScript ES6+</div>
-        <div class="tech-pill">AWS EC2</div>
-        <div class="tech-pill">HTTP RPC</div>
-        <div class="tech-pill">jsdom</div>
-        <div class="tech-pill">html-to-text</div>
-        <div class="tech-pill">yargs</div>
-        <div class="tech-pill">Jest</div>
-        <div class="tech-pill">tmux</div>
-        <div class="tech-pill">Porter Stemmer</div>
-      </div>
-
-      <div class="section-text" style="margin-top:0.18in;font-size:0.26in">
-        <strong style="color:var(--text)">Testing:</strong> Jest suite across M1-M5 milestones (serialization, comm, groups, store, MR). Benchmark harness outputs CSV + PDF reports for latency, throughput, and per-node data distribution.
-      </div>
-    </div>
   </div>
 
-  <!-- ══════════ FOOTER ══════════ -->
+  <!-- ═══════════ FOOTER ═══════════ -->
   <div class="footer">
-    <div class="footer-left">
-      CS1380: Distributed Computer Systems · Brown University · Spring 2026
-    </div>
+    <div class="footer-left">CS1380: Distributed Computer Systems &middot; Brown University &middot; Spring 2026</div>
     <div class="footer-right">
-      <div class="footer-badge">Node.js</div>
-      <div class="footer-badge">AWS EC2</div>
-      <div class="footer-badge">MapReduce</div>
-      <div class="footer-badge">PageRank</div>
-      <div class="footer-badge">TF-IDF</div>
+      <div class="fb">Node.js 20</div>
+      <div class="fb">AWS EC2</div>
+      <div class="fb">MapReduce</div>
+      <div class="fb">PageRank</div>
+      <div class="fb">TF-IDF</div>
+      <div class="fb">Project Gutenberg</div>
     </div>
   </div>
 
 </div>
-
 </body>
 </html>

@@ -246,9 +246,26 @@ function startCoordinator() {
       fs.rmSync(storeDir, {recursive: true, force: true});
       console.log('[bench] Cleaned store/ directory');
     }
+    // Best-effort stop of any stale workers from a previous run
+    const http = require('http');
+    workerNodes.forEach((node) => {
+      const body = JSON.stringify({node: {ip: nodeIp, port}, service: 'status', method: 'stop', args: []});
+      const req = http.request({host: node.ip, port: node.port, path: '/', method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body)}},
+        () => {});
+      req.on('error', () => {}); // not running — that's fine
+      req.write(body);
+      req.end();
+    });
+    console.log('[bench] Sent stop to any stale workers, waiting 2s…');
+    setTimeout(beginRun, 2000);
+    return;
   }
 
-  markStart('total');
+  beginRun();
+
+  function beginRun() {
+    markStart('total');
 
   const dist = distribution({ip: nodeIp, port});
 
@@ -530,6 +547,7 @@ function startCoordinator() {
     console.log(`[bench]   python3 benchmark/plot.py ${outDir}`);
     shutdownWorkers(dist, workerNodes);
   }
+  } // end beginRun
 }
 
 /* ------------------------------------------------------------------ */

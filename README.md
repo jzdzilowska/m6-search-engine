@@ -293,9 +293,78 @@ Project Gutenberg: 70,000+ free eBooks in HTML. Seeded from the Gutenberg catalo
 |--------|----|----|
 | **Crawl throughput** | N/A (pre-downloaded) | ~18 pages/sec across 3 workers |
 | **Index build time** | <1s (shell pipeline over 1 file) | ~10 min for 50K pages (MapReduce, chunks of 50) |
-| **Query latency** | <10ms (`grep` on local file) | ~40ms (distributed store lookups + PageRank + snippets) |
+| **Query latency** | <10ms (`grep` on local file) | ~8ms avg (distributed store lookups + PageRank + snippets) |
 | **Corpus size supported** | 1 document | 100K+ documents |
 | **Concurrent query support** | None (CLI only) | HTTP server handles concurrent requests |
+
+#### Benchmark Results (5,000 pages, 3 nodes, Gutenberg corpus)
+
+All benchmarks ran on 3 local worker nodes with 100 query runs per term (2 warmup discarded).
+
+**Component Latency & Throughput (3 nodes):**
+
+| Component | Latency | Throughput |
+|-----------|---------|------------|
+| Crawler | 25.7 ms/page | 38.8 pages/sec |
+| Indexer | 111.1 ms/doc | 9.0 docs/sec |
+| Query | 8.0 ms/query | 122.2 queries/sec |
+
+**End-to-End Duration (3 nodes):**
+
+| Phase | Duration |
+|-------|----------|
+| Boot | 8.1s |
+| Crawl | 128.7s |
+| Index | 555.5s |
+| Query benchmark | 8.2s |
+| **Total** | **700.5s** |
+
+**Scaling: Latency vs. Node Count (5K pages):**
+
+| Component | 1 node | 2 nodes | 3 nodes |
+|-----------|--------|---------|---------|
+| Crawler (ms/page) | 65.1 | 38.7 | 25.7 |
+| Indexer (ms/doc) | 124.6 | 128.8 | 111.1 |
+| Query (ms/query) | 14.3 | 9.5 | 8.0 |
+| End-to-End (sec) | 968.1 | 854.9 | 700.5 |
+
+**Scaling: Throughput vs. Node Count (5K pages):**
+
+| Component | 1 node | 2 nodes | 3 nodes |
+|-----------|--------|---------|---------|
+| Crawler (pages/sec) | 15.4 | 25.9 | 38.8 |
+| Indexer (docs/sec) | 8.0 | 7.8 | 9.0 |
+| Query (queries/sec) | 68.1 | 102.8 | 122.2 |
+| End-to-End (pages/sec) | 5.2 | 5.8 | 7.1 |
+
+Crawling scales near-linearly (2.5x throughput at 3x nodes). Query throughput scales well (1.8x at 3 nodes) due to sharded index lookups hitting different workers in parallel. Indexer throughput is relatively flat because MapReduce shuffle overhead dominates at this corpus size.
+
+**Per-Query Latency Breakdown (3 nodes, 100 runs each):**
+
+| Query | Avg (ms) | Min (ms) | Max (ms) |
+|-------|----------|----------|----------|
+| bible | 8.36 | 7 | 11 |
+| shakespeare | 8.64 | 7 | 12 |
+| cicero | 3.70 | 3 | 4 |
+| doyle | 4.86 | 4 | 8 |
+| plato | 6.54 | 6 | 9 |
+| homer | 8.18 | 7 | 10 |
+| philosophy | 9.19 | 8 | 13 |
+| science | 8.21 | 7 | 9 |
+| history | 12.54 | 12 | 14 |
+| art | 9.73 | 9 | 11 |
+
+Rare terms (cicero, doyle) are faster because fewer postings need scoring. Common terms (history, philosophy) take longer bcause of larger posting lists.
+
+**System Metrics:**
+
+| Metric | Value |
+|--------|-------|
+| Unique index terms | 167,782 |
+| Indexed documents | 5,000 |
+| Worker nodes | 3 |
+
+Benchmark plots (PDF): see `benchmark/figures/`
 
 #### Correctness
 

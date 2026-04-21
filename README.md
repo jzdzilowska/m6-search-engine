@@ -221,11 +221,11 @@ Gossip protocols are about scaling. If every node sends messages to every other 
 ### Summary
 My implementation comprises 1 new software component (`distribution/all/mr.js`); ~250 added lines of code over prev implementation. Key challenges:
 
-1. **Coordinating async phases across nodes**: The orchestrator must wait for all nodes to finish each phase (map, shuffle, reduce) before moving on. Solved by registering a coordinator notification service locally and tracking per-phase completion counts—each node calls `notify` on the coordinator after finishing, and the coordinator triggers the next phase when all nodes report in.
+1. **Coordinating async phases across nodes**: The orchestrator must wait for all nodes to finish each phase (map, shuffle, reduce) before moving on. Solved by registering a coordinator notification service locally and tracking per-phase completion counts-each node calls `notify` on the coordinator after finishing, and the coordinator triggers the next phase when all nodes report in.
 
 2. **Serializing functions across nodes**: The mapper and reducer functions need to run on remote worker nodes. Rather than relying on `this` binding (may not survive serialization), the coordinator passes the mapper/reducer as arguments when triggering each phase via `comm.send`, letting the framework's serializer handle function transfer.
 
-3. **Shuffle correctness—grouping values by key on the right node**: During shuffle, each node hashes its map output keys via `naiveHash` to determine which node is responsible for reducing that key, then sends the value there via `mem.append`. Getting the hash targets to agree across all nodes required using the same group lookup and hash function consistently.
+3. **Shuffle correctness-grouping values by key on the right node**: During shuffle, each node hashes its map output keys via `naiveHash` to determine which node is responsible for reducing that key, then sends the value there via `mem.append`. Getting the hash targets to agree across all nodes required using the same group lookup and hash function consistently.
 
 ### Correctness & Performance Characterization
 
@@ -235,3 +235,95 @@ My implementation comprises 1 new software component (`distribution/all/mr.js`);
 
 ### Key Feature
 The scatter-gather orchestrator dynamically registers ephemeral services (`mr-<id>`) on all group nodes and sequences the map → shuffle → reduce pipeline via a coordinator notification protocol. Each phase runs in parallel across all nodes; the coordinator only advances to the next phase after all nodes have confirmed completion. Cleanup deregisters all ephemeral services at the end.
+
+## M6: Cloud Deployment
+
+### Summary
+In M6 we brought together all previous milestones into a fully distributed search engine. We targeted Project Gutenberg's open books corpus, deployed across 4 AWS EC2 instances (m7i-flex.large). The system runs a coordinator/worker architecture: the coordinator manages the crawl frontier, orchestrates MapReduce indexing, computes PageRank, and serves a web-based search UI. Three workers handle HTTP fetching and distributed storage/computation.
+
+Key components built for M6:
+- `run.js` (367 LoC): Unified CLI entry point for coordinator and worker roles, worker polling, group registration, and pipeline sequencing
+- `crawler.js` (233 LoC): Wave-based BFS with round-robin dispatch to workers, frontier persistence, crash recovery
+- `worker_crawl.js` (147 LoC): Per-worker HTTP fetch service with timeout, HTML-to-text, link extraction
+- `indexer.js` (266 LoC): Distributed MapReduce inverted index with inline Porter stemmer
+- `pagerank.js` (142 LoC): Iterative power method with dangling node handling (extra credit)
+- `query.js` (188 LoC): TF-IDF + PageRank scoring, snippets, spell check (extra credit)
+- `server.js` (323 LoC): Web UI with highlighted results, query suggestions, `/status` debug endpoint (extra credit)
+- `utils.js` (129 LoC): Shared stemmer, tokenizer, URL hashing
+
+### Target Workload
+Project Gutenberg: 70,000+ free eBooks in HTML. Seeded from the Gutenberg catalog. The crawler follows internal links to book pages, author pages, and bookshelves. Rich text content makes it a strong target for full-text TF-IDF ranking.
+
+### Extra Credit Extensions
+1. **PageRank**: Iterative link analysis (d=0.85, 10 iterations) with dangling node mass spread uniformly. Scores boost retrieval via `1 + max(0, log(PR*N))`.
+2. **Spell check / query suggestions**: Edit-distance (1-edit) candidate generation. When a query term has no index hits, the system checks up to 30 variants against the index store and suggests the best match.
+3. **Highlighted snippets**: Matched query tokens wrapped in `<mark>` tags within result snippets, giving users visual feedback on match context.
+4. **Debugging infrastructure**: `GET /status` endpoint returning JSON with uptime, total queries served, indexed document count, worker count, heap memory, and Node version.
+
+### Challenges
+
+1. **No RPC timeout**: If a worker goes silent (network drop, crash), the coordinator hangs forever waiting for a response. We mitigated this with tmux sessions and crash-resumable crawler state, but a proper timeout/retry mechanism remains future work.
+
+2. **Function serialization in MapReduce**: Workers cannot `require()` modules during mapper execution. The entire Porter stemmer (~70 lines) and stopword list (~130 words) had to be inlined in the mapper function body.
+
+3. **SSH fragility at scale**: Long-running crawls on EC2 break when SSH connections drop (broken pipe). We learned to always use tmux and to persist crawl state every 500 pages.
+
+4. **Memory pressure**: The visited URL set grows to 60K+ SHA-256 hashes in memory. Required `--max-old-space-size=6144` on all nodes.
+
+5. **Security group / IP changes**: Switching networks (dorm vs library wifi) changed our public IP, locking us out of all EC2 instances until we updated the security group inbound rules.
+
+### Correctness & Performance Characterization
+
+#### M0 vs M6 Comparison
+
+| Dimension | M0 (non-distribution) | M6 (distributed) |
+|-----------|----------------------|-------------------|
+| **Architecture** | Single process, single machine | 4 EC2 nodes (1 coordinator + 3 workers) |
+| **Corpus** | 1 pre-downloaded text file (`content.txt`) | 100K+ live-crawled pages from Project Gutenberg |
+| **Indexing** | Shell pipeline (`process.sh`, `stem.js`) writing flat text files (`global-index.txt`) | Distributed MapReduce with inline Porter stemmer, sharded inverted index in KV store |
+| **Query** | `grep` over flat index file, exact n-gram substring match | TF-IDF scoring + PageRank boost + snippet extraction across distributed store |
+| **Ranking** | None (returns all matching lines, unranked) | TF-IDF x PageRank, sorted by relevance, top-N |
+| **Storage** | Local filesystem (`d/global-index.txt`, `d/content.txt`) | Distributed KV store sharded via consistent hashing across all nodes |
+| **Fault tolerance** | None (single process) | Crawler state persistence every 500 pages; crash-resumable |
+| **LoC** | 279 | ~4,600 (16x) |
+
+#### Performance
+
+| Metric | M0 | M6 |
+|--------|----|----|
+| **Crawl throughput** | N/A (pre-downloaded) | ~18 pages/sec across 3 workers |
+| **Index build time** | <1s (shell pipeline over 1 file) | ~10 min for 50K pages (MapReduce, chunks of 50) |
+| **Query latency** | <10ms (`grep` on local file) | ~40ms (distributed store lookups + PageRank + snippets) |
+| **Corpus size supported** | 1 document | 100K+ documents |
+| **Concurrent query support** | None (CLI only) | HTTP server handles concurrent requests |
+
+#### Correctness
+
+M0 correctness is limited to exact substring matching on pre-built n-gram index files. If the query terms appear as a substring of any index line, it's a "match." There is no relevance ranking.
+
+M6 correctness was verified in two ways:
+1. **Sandbox validation**: On a small known corpus (CS1380 sandbox), queries for unique terms returned the expected documents as the top-ranked result. Multi-term queries correctly combined TF-IDF scores across terms.
+2. **PageRank validation**: Gutenberg catalog pages (heavily linked from individual book pages) rank higher with PageRank enabled vs disabled, confirming the link analysis correctly identifies authoritative pages.
+3. **Stemming consistency**: Both the indexer mapper (inline Porter stemmer) and the query engine use identical stemming logic, verified by checking that stemmed query terms match stemmed index keys for known words.
+
+### Summarize the process of writing the paper and preparing the poster, including any surprises you encountered.
+
+The poster was the most creative part of the project. Turning a complex distributed system into a single visual page forced us to prioritize what mattered most. Biggest surprise was how fragile the deployment was; SSH drops, changing IPs, and missing tmux sessions caused more lost time than any code bug. The benchmark harness was straightforward to build but hard to actually run end-to-end on AWS due to these operational issues.
+
+### Roughly, how many hours did M6 take you to complete?
+
+Hours: ~80
+
+### How many LoC did the distributed version of the project end up taking?
+
+DLoC: ~4,600 (engine/ + distribution/)
+
+### How does this number compare with your non-distributed version?
+
+LoC: 279 (M0 single-machine search engine)
+
+The distributed version is roughly 16x larger than the non-distributed prototype, reflecting the complexity of RPC, group management, MapReduce orchestration, persistent sharded storage, and crash recovery.
+
+### How different are these numbers for different members in the team and why?
+
+Julia focused on the engine layer (crawler, indexer, query, server, extra credit features). Jesus focused on the distribution framework (comm, store, MR, groups). This split reflected our specialization - engine code is more application-level (HTTP fetching, NLP, UI) while the distribution code is more systems-level (RPC, serialization, sharding). Both required deep integration to make the layers compose correctly :)

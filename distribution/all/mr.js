@@ -81,12 +81,25 @@ function mr(config) {
           cb(null, 'ok');
 
           if (phase === 'map') {
-            if (++mapDone === nodeCount) triggerPhase('shuffle');
+            mapDone++;
+            // print if in indexer
+            if (configuration.map.name === 'indexMapper') {
+              console.log(`[mr] Map phase: ${mapDone}/${nodeCount} nodes done`);
+            }
+            if (mapDone === nodeCount) {
+              triggerPhase('shuffle');
+            }
           } else if (phase === 'shuffle') {
-            if (++shuffleDone === nodeCount) triggerPhase('reduce');
+            shuffleDone++;
+            if (shuffleDone === nodeCount) {
+              triggerPhase('reduce');
+            }
           } else if (phase === 'reduce') {
             if (Array.isArray(data)) reduceResults.push(...data);
-            if (++reduceDone === nodeCount) doCleanup();
+            reduceDone++;
+            if (reduceDone === nodeCount) {
+              doCleanup();
+            }
           }
         },
       };
@@ -157,33 +170,40 @@ function mr(config) {
               const groupNodes = Object.values(group);
               const nids = groupNodes.map((n) => id.getNID(n));
 
-              const pairs = [];
+              // Build a NID→node lookup to avoid re-hashing nodes
+              const nidToNode = {};
+              for (let i = 0; i < groupNodes.length; i++) {
+                nidToNode[nids[i]] = groupNodes[i];
+              }
+
+              // Bucket pairs by target node
+              const buckets = {}; // nid -> [{key, value}]
               outputs.forEach((obj) => {
                 if (obj && typeof obj === 'object') {
                   for (const [k, v] of Object.entries(obj)) {
-                    pairs.push({key: k, value: v});
+                    const kid = id.getID(k);
+                    const targetNid = id.naiveHash(kid, nids);
+                    if (!buckets[targetNid]) buckets[targetNid] = [];
+                    buckets[targetNid].push({key: k, value: v});
                   }
                 }
               });
 
-              if (pairs.length === 0) {
+              const nidKeys = Object.keys(buckets);
+              if (nidKeys.length === 0) {
                 return local.comm.send(
                     ['shuffle', null],
                     {node: coordNode, service: coordSvc, method: 'notify'},
                     () => cb(null, 'ok'));
               }
 
-              let left = pairs.length;
-              pairs.forEach(({key, value}) => {
-                const kid = id.getID(key);
-                const targetNid = id.naiveHash(kid, nids);
-                const targetNode = groupNodes.find(
-                    (n) => id.getNID(n) === targetNid,
-                );
-
+              // One RPC per target node with all its pairs
+              let left = nidKeys.length;
+              nidKeys.forEach((nid) => {
+                const targetNode = nidToNode[nid];
                 local.comm.send(
-                    [value, {key, gid: shuffleGid}],
-                    {node: targetNode, service: 'mem', method: 'append'},
+                    [buckets[nid], shuffleGid],
+                    {node: targetNode, service: 'mem', method: 'batchAppend'},
                     () => {
                       if (--left === 0) {
                         local.comm.send(
@@ -202,6 +222,7 @@ function mr(config) {
           if (typeof cb !== 'function') cb = () => {};
           const local = globalThis.distribution.local;
 
+          // @ts-ignore
           local.mem.get({key: null, gid: shuffleGid}, (e, keys) => {
             if (!keys || keys.length === 0) {
               return local.comm.send(
@@ -227,6 +248,23 @@ function mr(config) {
                       {node: coordNode, service: coordSvc, method: 'notify'},
                       () => cb(null, 'ok'));
                 }
+              });
+            });
+          });
+        },
+
+        cleanup: function(mapGid, shuffleGid, cb) {
+          if (typeof cb !== 'function') cb = () => {};
+          const local = globalThis.distribution.local;
+          // Delete map results and shuffle data from in-memory store
+          local.mem.del({key: 'mapResults', gid: mapGid}, () => {
+            local.mem.get({key: null, gid: shuffleGid}, (e, keys) => {
+              if (!keys || keys.length === 0) return cb(null, 'ok');
+              let left = keys.length;
+              keys.forEach((sk) => {
+                local.mem.del({key: sk, gid: shuffleGid}, () => {
+                  if (--left === 0) cb(null, 'ok');
+                });
               });
             });
           });
@@ -267,12 +305,31 @@ function mr(config) {
         }
       }
 
-      /* deregister services and return results */
+      /* deregister services and free shuffle memory, then return results */
       function doCleanup() {
-        globalThis.distribution[gid].routes.rem(mrServiceName, () => {
-          globalThis.distribution.local.routes.rem(coordServiceName, () => {
-            callback(null, reduceResults);
+        // Free in-memory shuffle data on every node to prevent OOM on large jobs
+        const local = globalThis.distribution.local;
+        let cleaned = 0;
+        const cleanupNodes = nodes.length;
+
+        function afterClean() {
+          globalThis.distribution[gid].routes.rem(mrServiceName, () => {
+            local.routes.rem(coordServiceName, () => {
+              callback(null, reduceResults);
+            });
           });
+        }
+
+        if (cleanupNodes === 0) return afterClean();
+
+        nodes.forEach((node) => {
+          local.comm.send(
+              [mapGid, shuffleGid],
+              {node, service: mrServiceName, method: 'cleanup'},
+              () => {
+                if (++cleaned === cleanupNodes) afterClean();
+              },
+          );
         });
       }
 

@@ -1,23 +1,21 @@
 const {urlKey} = require('./utils');
-const http = require('http');
-const https = require('https');
-const {convert} = require('html-to-text');
-const {JSDOM} = require('jsdom');
-const {URL} = require('url');
+const crypto = require('crypto');
 
-const BATCH_SIZE = 10;
-const FETCH_TIMEOUT = 15000;
-const MAX_BODY = 5 * 1024 * 1024; // 5 MB
+const BATCH_SIZE = 30;
+const MAX_FRONTIER = 200000;
 
 const STATE_KEY = '__crawler_state__';
+const URL_LIST_KEY = '__crawled_urls__';
 
 /**
- * Distributed crawler with persistence.
+ * Distributed crawler - fetching is distributed across workers.
  *
- * The coordinator fetches pages in parallel batches, extracts text + links,
- * and stores results in the distributed crawl store (sharded across workers).
- * Frontier and visited set are persisted after each wave so the crawler can
- * stop and resume from where it left off.
+ * The coordinator manages the frontier, visited/queued sets, and persistence.
+ * Each wave, it splits a batch of URLs round-robin across all workers in the
+ * crawl group, sending them via RPC to the 'crawl-fetch' service registered
+ * locally on each worker at boot time. Workers do the HTTP fetching, text
+ * extraction, link extraction, and page storage. They return outlinks back
+ * to the coordinator for deduplication and frontier management.
  */
 function crawl(config, callback) {
   const distribution = globalThis.distribution;
@@ -25,151 +23,83 @@ function crawl(config, callback) {
   const crawlGid = config.groupName || 'crawl';
   const batchSize = config.batchSize || BATCH_SIZE;
 
-  let visited = new Set();
-  let queued = new Set(config.seeds);
-  let frontier = [...config.seeds];
+  let visitedHashes = new Set();
+  let queuedHashes = new Set();
+  let frontier = [];
   let totalCrawled = 0;
-  let crawledUrls = [];
+  let crawledUrlsBuf = [];
+  let totalCrawledUrlsStored = 0;
+  let workerNodes = [];
 
-  /* ---- try to resume from persisted state ---- */
+  for (const s of config.seeds) {
+    const h = quickHash(s);
+    queuedHashes.add(h);
+    frontier.push(s);
+  }
+
+  function quickHash(url) {
+    return crypto.createHash('sha256').update(url).digest('hex').slice(0, 16);
+  }
+
+  /* ---- get worker node list ---- */
+  function getWorkers(cb) {
+    distribution.local.groups.get(crawlGid, (e, group) => {
+      if (e || !group) return cb(new Error('Cannot get crawl group'));
+      workerNodes = Object.values(group);
+      if (workerNodes.length === 0) return cb(new Error('No workers in crawl group'));
+      console.log(`[crawler] ${workerNodes.length} worker(s) available for fetching`);
+      cb(null);
+    });
+  }
+
+  /* ---- resume from persisted state ---- */
   function loadState(cb) {
     distribution[crawlGid].store.get(STATE_KEY, (e, state) => {
       if (e || !state) {
-        console.log('[crawler] No saved state found, starting fresh');
+        console.log('[crawler] No saved state, starting fresh');
         return cb();
       }
-      console.log(`[crawler] Resuming: ${state.totalCrawled} pages already crawled, ${state.frontier.length} URLs in frontier`);
-      visited = new Set(state.visited || []);
-      queued = new Set(state.queued || []);
+      console.log(
+          `[crawler] Resuming: ${state.totalCrawled} pages crawled, ` +
+          `${state.frontier.length} in frontier`,
+      );
+      visitedHashes = new Set(state.visitedHashes || []);
+      queuedHashes = new Set(state.queuedHashes || []);
       frontier = state.frontier || [];
       totalCrawled = state.totalCrawled || 0;
-      crawledUrls = state.crawledUrls || [];
+      totalCrawledUrlsStored = state.totalCrawledUrlsStored || 0;
       cb();
     });
   }
 
-  /* ---- persist state after each wave ---- */
+  /* ---- persist state ---- */
   function saveState(cb) {
     const state = {
-      visited: [...visited],
-      queued: [...queued],
-      frontier,
+      visitedHashes: [...visitedHashes],
+      queuedHashes: [...queuedHashes],
+      frontier: frontier.slice(0, MAX_FRONTIER),
       totalCrawled,
-      crawledUrls,
+      totalCrawledUrlsStored,
     };
     distribution[crawlGid].store.put(state, STATE_KEY, () => cb());
   }
 
-  /* ---- fetch a single URL ---- */
-  function fetchPage(pageUrl, cb) {
-    let called = false;
-    const done = (err, body) => {
-      if (called) return;
-      called = true;
-      cb(err, body);
-    };
-
-    const mod = pageUrl.startsWith('https') ? https : http;
-    const opts = {
-      timeout: FETCH_TIMEOUT,
-      headers: {'User-Agent': 'CS1380-SearchBot/1.0'},
-      rejectUnauthorized: false,
-    };
-
-    let req;
-    try {
-      req = mod.get(pageUrl, opts, (res) => {
-        if (res.statusCode >= 300 && res.statusCode < 400 &&
-            res.headers.location) {
-          const next = new URL(res.headers.location, pageUrl).href;
-          console.log(`[crawler]   redirect ${res.statusCode} → ${next}`);
-          res.resume();
-          return fetchPage(next, cb);
-        }
-
-        if (res.statusCode < 200 || res.statusCode >= 300) {
-          console.log(`[crawler]   ${pageUrl} → HTTP ${res.statusCode}`);
-          res.resume();
-          return done(null, null);
-        }
-
-        let body = '';
-        res.setEncoding('utf-8');
-        res.on('data', (chunk) => {
-          body += chunk;
-          if (body.length > MAX_BODY) {
-            res.destroy();
-            body = body.substring(0, MAX_BODY);
-          }
-        });
-        res.on('end', () => {
-          console.log(`[crawler]   ${pageUrl} → ${body.length} bytes`);
-          done(null, body);
-        });
-        res.on('error', (err) => {
-          console.error(`[crawler]   response error ${pageUrl}: ${err.message}`);
-          done(null, null);
-        });
-      });
-    } catch (err) {
-      console.error(`[crawler]   exception fetching ${pageUrl}: ${err.message}`);
-      return done(null, null);
-    }
-    req.on('error', (err) => {
-      console.error(`[crawler]   request error ${pageUrl}: ${err.message}`);
-      done(null, null);
-    });
-    req.on('timeout', () => {
-      console.error(`[crawler]   timeout ${pageUrl}`);
-      req.destroy();
-      done(null, null);
-    });
+  /* ---- flush crawled URL buffer to store ---- */
+  function flushUrlBuffer(cb) {
+    if (crawledUrlsBuf.length === 0) return cb();
+    const chunk = crawledUrlsBuf.splice(0);
+    const chunkKey = URL_LIST_KEY + ':' + totalCrawledUrlsStored;
+    totalCrawledUrlsStored += chunk.length;
+    distribution[crawlGid].store.put(chunk, chunkKey, () => cb());
   }
 
-  /* ---- process raw HTML into structured content ---- */
-  function processPage(url, html) {
-    let text = '';
-    try { text = convert(html, {wordwrap: false}); } catch (e) { /* */ }
-
-    let title = url;
-    try {
-      const m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-      if (m) title = m[1].trim();
-    } catch (e) { /* */ }
-
-    const outlinks = [];
-    try {
-      const dom = new JSDOM(html);
-      let base = url;
-      if (base.endsWith('index.html')) {
-        base = base.slice(0, -'index.html'.length);
-      }
-      dom.window.document.querySelectorAll('a[href]').forEach((a) => {
-        try {
-          const href = a.getAttribute('href');
-          if (!href || href.startsWith('#') || href.startsWith('javascript:') ||
-              href.startsWith('mailto:')) return;
-          const abs = new URL(href, base).href;
-          if (abs.startsWith('http://') || abs.startsWith('https://')) {
-            outlinks.push(abs);
-          }
-        } catch (e) { /* */ }
-      });
-    } catch (e) { /* */ }
-
-    return {
-      url,
-      text: text.substring(0, 50000),
-      title: title.substring(0, 500),
-      outlinks: [...new Set(outlinks)].slice(0, 500),
-    };
-  }
-
-  /* ---- wave loop ---- */
+  /* ---- wave loop: distribute URLs to workers ---- */
   function runWave() {
     if (frontier.length === 0 || totalCrawled >= maxPages) {
       console.log(`[crawler] Complete. ${totalCrawled} pages crawled.`);
-      return saveState(() => callback(null, {totalCrawled, crawledUrls}));
+      return flushUrlBuffer(() => saveState(() => {
+        loadCrawledUrls((urls) => callback(null, {totalCrawled, crawledUrls: urls}));
+      }));
     }
 
     const remaining = maxPages - totalCrawled;
@@ -177,63 +107,127 @@ function crawl(config, callback) {
     while (batch.length < Math.min(batchSize, remaining) &&
            frontier.length > 0) {
       const url = frontier.shift();
-      if (!visited.has(url)) batch.push(url);
+      const h = quickHash(url);
+      if (!visitedHashes.has(h)) {
+        visitedHashes.add(h);
+        batch.push(url);
+      }
     }
 
     if (batch.length === 0) {
       if (frontier.length > 0) return setImmediate(runWave);
       console.log(`[crawler] Complete. ${totalCrawled} pages crawled.`);
-      return saveState(() => callback(null, {totalCrawled, crawledUrls}));
+      return flushUrlBuffer(() => saveState(() => {
+        loadCrawledUrls((urls) => callback(null, {totalCrawled, crawledUrls: urls}));
+      }));
     }
 
-    console.log(
-        `[crawler] Wave: ${batch.length} URLs ` +
-        `| crawled so far: ${totalCrawled} ` +
-        `| frontier: ${frontier.length}`,
-    );
+    if (totalCrawled % 100 === 0 || batch.length > 1) {
+      console.log(
+          `[crawler] Wave: ${batch.length} URLs → ${workerNodes.length} workers ` +
+          `| crawled: ${totalCrawled} ` +
+          `| frontier: ${frontier.length} ` +
+          `| visited: ${visitedHashes.size}`,
+      );
+    }
 
-    let done = 0;
-    const pageResults = [];
+    // Split batch round-robin across workers
+    const workerBatches = workerNodes.map(() => []);
+    batch.forEach((url, i) => {
+      workerBatches[i % workerNodes.length].push(url);
+    });
 
-    batch.forEach((url) => {
-      visited.add(url);
+    let workersResponded = 0;
+    const totalWorkersSent = workerBatches.filter((b) => b.length > 0).length;
 
-      fetchPage(url, (e, html) => {
-        if (html && html.length > 50) {
-          const content = processPage(url, html);
-          pageResults.push(content);
-        }
+    if (totalWorkersSent === 0) {
+      return setImmediate(runWave);
+    }
 
-        if (++done < batch.length) return;
+    // Collect all pages from all workers, then store from coordinator
+    const allPages = [];
 
-        if (pageResults.length === 0) {
-          return saveState(() => setImmediate(runWave));
-        }
+    workerBatches.forEach((subBatch, idx) => {
+      if (subBatch.length === 0) return;
 
-        let stored = 0;
-        pageResults.forEach((content) => {
-          crawledUrls.push(content.url);
-          totalCrawled++;
-
-          content.outlinks.forEach((link) => {
-            if (!visited.has(link) && !queued.has(link)) {
-              queued.add(link);
-              frontier.push(link);
+      const workerNode = workerNodes[idx];
+      distribution.local.comm.send(
+          [subBatch],
+          {node: workerNode, service: 'crawl-fetch', method: 'fetchBatch'},
+          (e, result) => {
+            if (!e && result) {
+              if (result.pages && result.pages.length > 0) {
+                allPages.push(...result.pages);
+              }
+              if (result.outlinks && result.outlinks.length > 0) {
+                for (const link of result.outlinks) {
+                  const lh = quickHash(link);
+                  if (!visitedHashes.has(lh) && !queuedHashes.has(lh)) {
+                    queuedHashes.add(lh);
+                    if (frontier.length < MAX_FRONTIER) frontier.push(link);
+                  }
+                }
+              }
+            } else if (e) {
+              console.error(`[crawler] Worker ${workerNode.ip}:${workerNode.port} error:`, e.message || e);
             }
-          });
 
-          const pk = urlKey(content.url);
-          distribution[crawlGid].store.put(content, pk, () => {
-            if (++stored === pageResults.length) {
-              saveState(() => setImmediate(runWave));
+            if (++workersResponded === totalWorkersSent) {
+              // All workers responded - now store pages from coordinator
+              if (allPages.length === 0) {
+                return setImmediate(runWave);
+              }
+
+              let stored = 0;
+              allPages.forEach((content) => {
+                crawledUrlsBuf.push(content.url);
+                totalCrawled++;
+
+                const pk = urlKey(content.url);
+                distribution[crawlGid].store.put(content, pk, () => {
+                  if (++stored === allPages.length) {
+                    const shouldFlush = crawledUrlsBuf.length >= 200;
+                    const next = () => {
+                      if (totalCrawled % 500 === 0 && totalCrawled > 0) {
+                        return saveState(() => setImmediate(runWave));
+                      }
+                      setImmediate(runWave);
+                    };
+                    if (shouldFlush) {
+                      flushUrlBuffer(next);
+                    } else {
+                      next();
+                    }
+                  }
+                });
+              });
             }
-          });
-        });
-      });
+          },
+      );
     });
   }
 
-  loadState(() => runWave());
+  /* ---- reconstruct full URL list from stored chunks ---- */
+  function loadCrawledUrls(cb) {
+    const allUrls = [];
+    let idx = 0;
+    function loadNext() {
+      const key = URL_LIST_KEY + ':' + idx;
+      distribution[crawlGid].store.get(key, (e, chunk) => {
+        if (e || !chunk || !Array.isArray(chunk)) return cb(allUrls);
+        allUrls.push(...chunk);
+        idx += chunk.length;
+        loadNext();
+      });
+    }
+    loadNext();
+  }
+
+  /* ---- start: get workers, load state, run ---- */
+  getWorkers((e) => {
+    if (e) return callback(e);
+    loadState(() => runWave());
+  });
 }
 
 module.exports = {crawl};

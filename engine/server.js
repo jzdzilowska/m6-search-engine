@@ -13,6 +13,9 @@ const {search} = require('./query');
  * @param {string}   [config.indexGroupName]  - Index group to query
  * @param {Function} [callback]              - (err, httpServer)
  */
+const startTime = Date.now();
+let queryCount = 0;
+
 function startServer(config, callback) {
   const port = config.port || 3000;
   const indexGroupName = config.indexGroupName || 'index';
@@ -34,10 +37,18 @@ function startServer(config, callback) {
         return;
       }
 
-      search(query, {indexGroupName, maxResults: 20}, (e, results) => {
+      queryCount++;
+      const qStart = Date.now();
+      search(query, {indexGroupName, crawlGroupName: 'crawl', maxResults: 20}, (e, results) => {
+        const latency = Date.now() - qStart;
         res.writeHead(200, {'Content-Type': 'text/html'});
-        res.end(renderResultsPage(query, results || []));
+        res.end(renderResultsPage(query, results || [], latency));
       });
+      return;
+    }
+
+    if (parsed.pathname === '/status' && req.method === 'GET') {
+      serveStatus(res, indexGroupName);
       return;
     }
 
@@ -53,8 +64,33 @@ function startServer(config, callback) {
   });
 }
 
+function serveStatus(res, indexGid) {
+  const distribution = globalThis.distribution;
+  const uptime = Math.floor((Date.now() - startTime) / 1000);
+
+  distribution[indexGid].store.get('__totalDocs__', (e, totalDocs) => {
+    distribution.local.groups.get('crawl', (e2, crawlGroup) => {
+      distribution.local.groups.get('index', (e3, indexGroup) => {
+        const workerCount = crawlGroup ? Object.keys(crawlGroup).length : 0;
+        const status = {
+          uptime_seconds: uptime,
+          total_queries_served: queryCount,
+          indexed_documents: totalDocs || 0,
+          worker_nodes: workerCount,
+          index_group: indexGid,
+          memory_mb: +(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1),
+          node_version: process.version,
+        };
+
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify(status, null, 2));
+      });
+    });
+  });
+}
+
 /* ------------------------------------------------------------------ */
-/*  HTML templates — minimal black & white aesthetic                    */
+/*  HTML templates                                                      */
 /* ------------------------------------------------------------------ */
 
 const SHARED_STYLES = `
@@ -120,20 +156,29 @@ function renderSearchPage(message) {
     <button type="submit">Search</button>
   </form>
   ${message ? `<p class="msg">${esc(message)}</p>` : ''}
-  <div class="footer">Distributed Search Engine &mdash; Brown CS1380</div>
+  <div class="footer">Distributed Search Engine · Brown CS1380</div>
 </body>
 </html>`;
 }
 
-function renderResultsPage(query, results) {
+function renderResultsPage(query, results, latencyMs) {
+  const suggestions = results.suggestions || {};
+  const suggestionHtml = Object.keys(suggestions).length > 0 ?
+    `<p class="suggestion">Did you mean: <a href="/search?q=${
+      encodeURIComponent(Object.values(suggestions).join(' '))
+    }">${Object.entries(suggestions).map(([orig, fix]) =>
+      `<em>${esc(fix)}</em>`).join(' ')}</a>?</p>` : '';
+
   const resultsHtml = results.length === 0 ?
     '<p class="empty">No results found.</p>' :
     results.map((r, i) => `
       <article class="result">
         <div class="result-header">
           <span class="num">${String(i + 1).padStart(2, '0')}</span>
-          <a href="${esc(r.url)}" target="_blank" rel="noopener" class="link">${esc(r.url)}</a>
+          <a href="${esc(r.url)}" target="_blank" rel="noopener" class="link">${r.title ? esc(r.title) : esc(r.url)}</a>
         </div>
+        <div class="result-url">${esc(r.url)}</div>
+        ${r.snippet ? `<p class="snippet">${highlightSnippet(r.snippet)}</p>` : ''}
         <div class="meta">
           <span class="score">${r.score.toFixed(2)}</span>${
   r.details && r.details.length ?
@@ -150,7 +195,7 @@ function renderResultsPage(query, results) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${esc(query)} &mdash; Search</title>
+  <title>${esc(query)} · Search</title>
   <style>
     ${SHARED_STYLES}
     header {
@@ -201,12 +246,21 @@ function renderResultsPage(query, results) {
       font-variant-numeric: tabular-nums;
     }
     .link {
-      font-size: 0.95rem; font-weight: 400; color: #000;
+      font-size: 0.95rem; font-weight: 500; color: #000;
       text-decoration: none; word-break: break-all;
       line-height: 1.5;
       transition: color 0.15s;
     }
     .link:hover { color: #666; }
+    .result-url {
+      padding-left: 2.25rem; margin-top: 0.2rem;
+      font-size: 0.75rem; color: #888; word-break: break-all;
+    }
+    .snippet {
+      padding-left: 2.25rem; margin-top: 0.5rem;
+      font-size: 0.85rem; color: #444; line-height: 1.6;
+      font-weight: 300;
+    }
     .meta { margin-top: 0.5rem; padding-left: 2.25rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
     .score {
       font-size: 0.75rem; font-weight: 500; color: #999;
@@ -219,6 +273,13 @@ function renderResultsPage(query, results) {
       letter-spacing: 0.03em;
     }
     .empty { color: #999; font-weight: 300; font-size: 0.95rem; }
+    .suggestion {
+      margin-bottom: 1.5rem; font-size: 0.85rem; color: #666; font-weight: 300;
+    }
+    .suggestion a { color: #1a0dab; text-decoration: none; }
+    .suggestion em { font-style: italic; font-weight: 500; }
+    .latency { font-size: 0.7rem; color: #bbb; margin-left: 0.5rem; }
+    mark { background: #fff3cd; padding: 1px 2px; border-radius: 2px; color: #000; }
   </style>
 </head>
 <body>
@@ -233,11 +294,21 @@ function renderResultsPage(query, results) {
     <p class="summary">
       ${results.length} result${results.length !== 1 ? 's' : ''}
       for <strong>${esc(query)}</strong>
+      ${latencyMs ? `<span class="latency">(${latencyMs}ms)</span>` : ''}
     </p>
+    ${suggestionHtml}
     ${resultsHtml}
   </div>
 </body>
 </html>`;
+}
+
+function highlightSnippet(snippet) {
+  // Query.js marks highlights with \x00...\x01 placeholders
+  // First escape HTML, then convert placeholders to <mark> tags
+  let safe = esc(snippet);
+  safe = safe.replace(/\x00/g, '<mark>').replace(/\x01/g, '</mark>');
+  return safe;
 }
 
 function esc(str) {

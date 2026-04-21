@@ -15,3 +15,10 @@ dist
 stencil
 .npm-cache
 node_modules/
+
+# benchmarking
+
+results
+
+
+!/benchmark/aws-benchmark/scaling_report.pdf

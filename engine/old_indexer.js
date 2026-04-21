@@ -3,10 +3,18 @@ const {urlKey} = require('./utils');
 /**
  * Build an inverted index with TF-IDF from crawled pages using MapReduce.
  *
- * Memory-critical: results from each MR chunk are streamed directly to the
- * index store and discarded - never accumulated in a coordinator-side array.
- * For terms that appear across multiple chunks, the reducer's postings are
- * merged into whatever is already stored (read-merge-write).
+ * Single MR job:
+ *   Map   – tokenise, stem, count per-term frequency for each page.
+ *   Reduce – aggregate postings across pages for each term.
+ *
+ * After MR the posting lists are persisted to the index group store so the
+ * query engine can look them up directly.
+ *
+ * @param {object}   config
+ * @param {string}   [config.pagesGroupName]  - Group holding crawled pages
+ * @param {string}   [config.indexGroupName]  - Group to store the index
+ * @param {string[]} config.crawledUrls       - URLs that were crawled
+ * @param {Function} callback                 - (err, {totalTerms, totalDocs})
  */
 function buildIndex(config, callback) {
   const distribution = globalThis.distribution;
@@ -25,8 +33,11 @@ function buildIndex(config, callback) {
 
   /* -----------------------------------------------------------------
    * Mapper - fully self-contained (no require - workers lack it).
+   * Tokenises, stems (Porter algorithm), counts per-term frequency.
+   * Emits { term: { url, tf } } for every unique stem in the page.
    * ----------------------------------------------------------------- */
   const indexMapper = (key, value) => {
+    /* --- inline Porter stemmer (matches natural.PorterStemmer) --- */
     function porterStem(w) {
       if (w.length < 3) return w;
       const cons = '[^aeiou]'; const vowel = '[aeiou]';
@@ -35,10 +46,10 @@ function buildIndex(config, callback) {
       const mgr1 = new RegExp('^(' + C + ')?' + V + C + V + C);
       const meq1 = new RegExp('^(' + C + ')?' + V + C + '(' + V + ')?$');
       const s_v = new RegExp('^(' + C + ')?' + vowel);
-      let stem = w; let re; let re2; let re3; let re4;
+      let stem = w; let suffix; let re; let re2; let re3; let re4;
 
       if (w.length > 2) {
-        const ch1 = w.substr(0, 1);
+        const ch1 = w.substr(0,1);
         if (ch1 === 'y') stem = ch1.toUpperCase() + w.substr(1);
       }
 
@@ -64,7 +75,7 @@ function buildIndex(config, callback) {
       if (re.test(stem)) {
         const fp = re.exec(stem);
         if (mgr0.test(fp[1])) {
-          const map = {ational: 'ate', tional: 'tion', enci: 'ence', anci: 'ance', izer: 'ize', bli: 'ble', alli: 'al', entli: 'ent', eli: 'e', ousli: 'ous', ization: 'ize', ation: 'ate', ator: 'ate', alism: 'al', iveness: 'ive', fulness: 'ful', ousness: 'ous', aliti: 'al', iviti: 'ive', biliti: 'ble', logi: 'log'};
+          const map = {ational:'ate',tional:'tion',enci:'ence',anci:'ance',izer:'ize',bli:'ble',alli:'al',entli:'ent',eli:'e',ousli:'ous',ization:'ize',ation:'ate',ator:'ate',alism:'al',iveness:'ive',fulness:'ful',ousness:'ous',aliti:'al',iviti:'ive',biliti:'ble',logi:'log'};
           stem = fp[1] + map[fp[2]];
         }
       }
@@ -73,7 +84,7 @@ function buildIndex(config, callback) {
       if (re.test(stem)) {
         const fp = re.exec(stem);
         if (mgr0.test(fp[1])) {
-          const map = {icate: 'ic', ative: '', alize: 'al', iciti: 'ic', ical: 'ic', ful: '', ness: ''};
+          const map = {icate:'ic',ative:'',alize:'al',iciti:'ic',ical:'ic',ful:'',ness:''};
           stem = fp[1] + map[fp[2]];
         }
       }
@@ -81,7 +92,7 @@ function buildIndex(config, callback) {
       re = /^(.+?)(al|ance|ence|er|ic|able|ible|ant|ement|ment|ent|ou|ism|ate|iti|ous|ive|ize)$/;
       re2 = /^(.+?)(s|t)(ion)$/;
       if (re.test(stem)) { const fp = re.exec(stem); if (mgr1.test(fp[1])) stem = fp[1]; }
-      else if (re2.test(stem)) { const fp = re2.exec(stem); if (mgr1.test(fp[1] + fp[2])) stem = fp[1] + fp[2]; }
+      else if (re2.test(stem)) { const fp = re2.exec(stem); if (mgr1.test(fp[1]+fp[2])) stem = fp[1]+fp[2]; }
 
       re = /^(.+?)e$/;
       if (re.test(stem)) {
@@ -93,26 +104,28 @@ function buildIndex(config, callback) {
       re = /ll$/;
       if (re.test(stem) && mgr1.test(stem)) stem = stem.slice(0, -1);
 
-      if (w.length > 2 && w.substr(0, 1) === 'y') stem = stem.substr(0, 1).toLowerCase() + stem.substr(1);
+      if (w.length > 2 && w.substr(0,1) === 'y') stem = stem.substr(0,1).toLowerCase() + stem.substr(1);
       return stem;
     }
 
-    const STOP = new Set(['a', 'about', 'above', 'after', 'again', 'against', 'all',
-      'am', 'an', 'and', 'any', 'are', 'aren', 'as', 'at', 'be', 'because', 'been',
-      'before', 'being', 'below', 'between', 'both', 'but', 'by', 'can', 'could',
-      'did', 'do', 'does', 'doing', 'don', 'down', 'during', 'each', 'few', 'for',
-      'from', 'further', 'get', 'got', 'had', 'has', 'have', 'having', 'he', 'her',
-      'here', 'hers', 'herself', 'him', 'himself', 'his', 'how', 'i', 'if', 'in',
-      'into', 'is', 'isn', 'it', 'its', 'itself', 'just', 'll', 'me', 'might',
-      'more', 'most', 'my', 'myself', 'no', 'nor', 'not', 'now', 'of', 'off', 'on',
-      'once', 'only', 'or', 'other', 'our', 'ours', 'ourselves', 'out', 'over',
-      'own', 're', 's', 'same', 'she', 'should', 'so', 'some', 'such', 't', 'than',
-      'that', 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there',
-      'these', 'they', 'this', 'those', 'through', 'to', 'too', 'under', 'until',
-      'up', 've', 'very', 'was', 'we', 'were', 'what', 'when', 'where', 'which',
-      'while', 'who', 'whom', 'why', 'will', 'with', 'would', 'you', 'your',
-      'yours', 'yourself', 'yourselves', 'd', 'm', 'o', 'll', 've']);
+    /* --- inline stopwords (common English) --- */
+    const STOP = new Set(['a','about','above','after','again','against','all',
+      'am','an','and','any','are','aren','as','at','be','because','been',
+      'before','being','below','between','both','but','by','can','could',
+      'did','do','does','doing','don','down','during','each','few','for',
+      'from','further','get','got','had','has','have','having','he','her',
+      'here','hers','herself','him','himself','his','how','i','if','in',
+      'into','is','isn','it','its','itself','just','ll','me','might',
+      'more','most','my','myself','no','nor','not','now','of','off','on',
+      'once','only','or','other','our','ours','ourselves','out','over',
+      'own','re','s','same','she','should','so','some','such','t','than',
+      'that','the','their','theirs','them','themselves','then','there',
+      'these','they','this','those','through','to','too','under','until',
+      'up','ve','very','was','we','were','what','when','where','which',
+      'while','who','whom','why','will','with','would','you','your',
+      'yours','yourself','yourselves','d','m','o','ll','ve']);
 
+    /* --- extract text --- */
     let text;
     if (typeof value === 'object' && value !== null) {
       text = value.text || '';
@@ -160,10 +173,10 @@ function buildIndex(config, callback) {
     return {[key]: postings};
   };
 
-  /* ----- Run MR in chunks, stream each chunk to store ----- */
-  const MR_CHUNK = 50;
+  /* ----- Run MR in chunks to avoid overwhelming shuffle ----- */
+  const MR_CHUNK = 50; // pages per MR job
+  const allResults = []; // accumulate {term: postings} across chunks
   let chunkIdx = 0;
-  let totalTermsWritten = 0;
 
   function runNextChunk() {
     if (chunkIdx >= pageKeys.length) {
@@ -183,80 +196,70 @@ function buildIndex(config, callback) {
         (e, results) => {
           if (e) {
             console.error(`[indexer] MR chunk ${chunkNum} error:`, e);
-            chunkIdx += MR_CHUNK;
-            return setImmediate(runNextChunk);
+          } else if (results && results.length > 0) {
+            allResults.push(...results);
           }
-
-          if (!results || results.length === 0) {
-            chunkIdx += MR_CHUNK;
-            return setImmediate(runNextChunk);
-          }
-
-          // Stream this chunk's results directly to the index store,
-          // merging with any existing postings from prior chunks.
-          storeChunkResults(results, () => {
-            chunkIdx += MR_CHUNK;
-            // Hint GC to free the results array
-            results.length = 0;
-            if (global.gc) global.gc();
-            setImmediate(runNextChunk);
-          });
+          chunkIdx += MR_CHUNK;
+          setImmediate(runNextChunk);
         },
     );
   }
 
-  /**
-   * Write one chunk's MR results into the index store.
-   * For each term, read existing postings, merge, write back.
-   * Done in batches of STORE_BATCH to avoid overwhelming RPC.
-   */
-  function storeChunkResults(results, cb) {
-    const STORE_BATCH = 200;
-    let idx = 0;
+  /* ----- Merge and persist after all MR chunks complete ----- */
+  function finishIndex() {
+    // Merge posting lists - same term can appear in multiple chunks
+    const merged = {}; // term → {url: tf, …}
+    for (const obj of allResults) {
+      const term = Object.keys(obj)[0];
+      const postings = obj[term];
+      if (!merged[term]) {
+        merged[term] = postings;
+      } else {
+        for (const [url, tf] of Object.entries(postings)) {
+          merged[term][url] = (merged[term][url] || 0) + tf;
+        }
+      }
+    }
 
-    function nextBatch() {
-      if (idx >= results.length) return cb();
+    const terms = Object.keys(merged);
+    console.log(`[indexer] Storing ${terms.length} merged terms …`);
 
-      const batch = results.slice(idx, idx + STORE_BATCH);
-      let pending = batch.length;
+    if (terms.length === 0) {
+      return callback(null, {totalTerms: 0, totalDocs});
+    }
 
-      batch.forEach((obj) => {
-        const term = Object.keys(obj)[0];
-        const newPostings = obj[term];
+    distribution[indexGid].store.put(totalDocs, '__totalDocs__', () => {
+      const BATCH = 500;
+      let idx = 0;
 
-        distribution[indexGid].store.get(term, (e, existing) => {
-          let merged;
-          if (!e && existing && typeof existing === 'object') {
-            merged = existing;
-            for (const [url, tf] of Object.entries(newPostings)) {
-              merged[url] = (merged[url] || 0) + tf;
-            }
-          } else {
-            merged = newPostings;
-          }
+      function storeBatch() {
+        if (idx >= terms.length) {
+          console.log(
+              `[indexer] Complete. ${terms.length} terms indexed ` +
+              `across ${totalDocs} docs.`,
+          );
+          return callback(null, {totalTerms: terms.length, totalDocs});
+        }
 
-          distribution[indexGid].store.put(merged, term, () => {
-            totalTermsWritten++;
-            if (--pending === 0) {
-              idx += STORE_BATCH;
-              setImmediate(nextBatch);
+        const batch = terms.slice(idx, idx + BATCH);
+        let done = 0;
+
+        batch.forEach((term) => {
+          distribution[indexGid].store.put(merged[term], term, () => {
+            if (++done === batch.length) {
+              idx += BATCH;
+              if (idx % 2000 === 0 || idx >= terms.length) {
+                console.log(
+                    `[indexer]   stored ${Math.min(idx, terms.length)}/${terms.length} terms`,
+                );
+              }
+              setImmediate(storeBatch);
             }
           });
         });
-      });
-    }
+      }
 
-    nextBatch();
-  }
-
-  function finishIndex() {
-    console.log(`[indexer] Storing __totalDocs__ = ${totalDocs}`);
-    distribution[indexGid].store.put(totalDocs, '__totalDocs__', () => {
-      console.log(
-          `[indexer] Complete. ${totalTermsWritten} term writes ` +
-          `across ${totalDocs} docs.`,
-      );
-      callback(null, {totalTerms: totalTermsWritten, totalDocs});
+      storeBatch();
     });
   }
 

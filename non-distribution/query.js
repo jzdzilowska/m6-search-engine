@@ -9,7 +9,7 @@ grep "$(echo "$@" | ./c/process.sh | ./c/stem.js | tr "\r\n" "  ")" d/global-ind
 
 Here is one idea on how to develop it:
 1. Read the command-line arguments using `process.argv`. A user can provide any string to search for.
-2. Normalize, remove stopwords from and stem the query string — use already developed components
+2. Normalize, remove stopwords from and stem the query string - use already developed components
 3. Search the global index using the processed query string.
 4. Print the matching lines from the global index file.
 

@@ -1,146 +1,238 @@
 #!/usr/bin/env node
 
 /**
- * Orchestrator for the distributed search engine.
+ * Unified entry point for the distributed search engine.
  *
- * Usage:
- *   node engine/run.js --seeds "https://…,https://…" --maxPages 200
+ * Each AWS instance runs this script as either a coordinator or a worker.
  *
- * Pipeline:
- *   1. Boot local coordinator node + N worker nodes
- *   2. Register crawl / pages / index groups (same node set)
- *   3. Crawl seed URLs (distributed MR)
- *   4. Build inverted index (distributed MR)
- *   5. Start web-UI query server
+ * Worker (run first on each worker instance):
+ *   node engine/run.js --role worker --ip <private-ip> --port 7110
+ *
+ * Coordinator (run last, after all workers are up):
+ *   node engine/run.js --role coordinator \
+ *     --ip <private-ip> \
+ *     --workers "10.0.0.2:7110,10.0.0.3:7110,10.0.0.4:7110" \
+ *     --seeds "https://example.com" \
+ *     --maxPages 500
+ *
+ * Pipeline (coordinator only):
+ *   1. Poll each worker until it responds to a status ping
+ *   2. Register crawl / index groups with the worker node set
+ *   3. Crawl seed URLs (distributed MR across workers)
+ *   4. Build inverted index (distributed MR across workers)
+ *   5. Serve the search web UI
  */
 
 const distribution = require('../distribution');
 
 const args = require('yargs/yargs')(process.argv.slice(2))
+    .option('role', {
+      type: 'string',
+      choices: ['coordinator', 'worker'],
+      describe: 'coordinator: runs the pipeline | worker: executes distributed tasks',
+      demandOption: true,
+    })
+    .option('ip', {
+      type: 'string',
+      describe: "This node's own IP address (use the instance's private IP on AWS)",
+      default: '127.0.0.1',
+    })
+    .option('port', {
+      type: 'number',
+      describe: "This node's listening port (coordinator defaults to 1234, worker to 7110)",
+    })
+    /* ---- coordinator-only options ---- */
+    .option('workers', {
+      type: 'string',
+      describe: '[coordinator] Comma-separated worker addresses: ip:port,...',
+      default: '',
+    })
     .option('seeds', {
       type: 'string',
-      describe: 'Comma-separated seed URLs',
+      describe: '[coordinator] Comma-separated seed URLs',
       default: [
-        'https://cs.brown.edu/courses/csci1380/sandbox/1/',
-        'https://cs.brown.edu/courses/csci1380/sandbox/2/',
+        'https://en.wikipedia.org/wiki/Computer_science',
+        'https://en.wikipedia.org/wiki/Alan_Turing',
       ].join(','),
     })
     .option('maxPages', {
       type: 'number',
-      describe: 'Maximum number of pages to crawl',
+      describe: '[coordinator] Maximum number of pages to crawl',
       default: 100,
-    })
-    .option('nodes', {
-      type: 'number',
-      describe: 'Number of worker nodes to spawn',
-      default: 3,
-    })
-    .option('basePort', {
-      type: 'number',
-      describe: 'Starting port for worker nodes',
-      default: 7110,
     })
     .option('serverPort', {
       type: 'number',
-      describe: 'Port for the search web UI',
+      describe: '[coordinator] Port for the search web UI',
       default: 3000,
     })
     .option('skipCrawl', {
       type: 'boolean',
-      describe: 'Skip crawling (reuse stored pages)',
+      describe: '[coordinator] Skip crawling (reuse stored pages)',
       default: false,
     })
     .option('skipIndex', {
       type: 'boolean',
-      describe: 'Skip indexing (reuse stored index)',
+      describe: '[coordinator] Skip indexing (reuse stored index)',
       default: false,
     })
     .option('clean', {
       type: 'boolean',
-      describe: 'Wipe all stored data before running',
+      describe: '[coordinator] Wipe all stored data before running',
       default: false,
     })
     .help()
     .parse();
 
-/* ------------------------------------------------------------------ */
-/*  Configuration                                                      */
-/* ------------------------------------------------------------------ */
-
-const seeds = args.seeds.split(',').map((s) => s.trim()).filter(Boolean);
-const numNodes = args.nodes;
-const basePort = args.basePort;
-
-const workerNodes = [];
-for (let i = 0; i < numNodes; i++) {
-  workerNodes.push({ip: '127.0.0.1', port: basePort + i});
+if (args.role === 'worker') {
+  startWorker();
+} else {
+  startCoordinator();
 }
 
-console.log('[run] ──────────────────────────────────────');
-console.log('[run]  Distributed Search Engine — CS1380 M6');
-console.log('[run] ──────────────────────────────────────');
-console.log(`[run] Workers : ${numNodes} (ports ${basePort}–${basePort + numNodes - 1})`);
-console.log(`[run] Seeds   : ${seeds.length} URL(s)`);
-console.log(`[run] Max pgs : ${args.maxPages}`);
-console.log('[run] ──────────────────────────────────────');
-
 /* ------------------------------------------------------------------ */
-/*  Boot                                                               */
+/*  Worker                                                             */
 /* ------------------------------------------------------------------ */
 
-if (args.clean) {
-  const fs = require('fs');
-  const path = require('path');
-  const storeDir = path.join(__dirname, '..', 'store');
-  if (fs.existsSync(storeDir)) {
-    fs.rmSync(storeDir, {recursive: true, force: true});
-    console.log('[run] Cleaned store/ directory');
-  }
-}
+function startWorker() {
+  const port = args.port || 7110;
+  const nodeIp = args.ip;
 
-const dist = distribution();
+  console.log(`[worker] Starting on ${nodeIp}:${port}`);
 
-dist.node.start((e) => {
-  if (e) {
-    console.error('[run] Failed to start coordinator:', e);
-    process.exit(1);
-  }
-  console.log('[run] Coordinator node started on port',
-      dist.node.config.port);
+  const dist = distribution({ip: nodeIp, port});
+  dist.node.start((e) => {
+    if (e) {
+      console.error('[worker] Failed to start:', e);
+      process.exit(1);
+    }
 
-  spawnNodes(workerNodes, 0, () => {
-    console.log(`[run] ${numNodes} worker node(s) spawned`);
-
-    const id = dist.util.id;
-    const group = {};
-    workerNodes.forEach((n) => {
-      group[id.getSID(n)] = n;
-    });
-
-    const groupNames = ['crawl', 'index'];
-    registerGroups(groupNames, group, 0, () => {
-      console.log('[run] Groups registered:', groupNames.join(', '));
-
-      /* ---------- Pipeline ---------- */
-      if (args.skipCrawl) {
-        console.log('[run] Skipping crawl (--skipCrawl)');
-        dist['crawl'].store.get('__crawler_state__', (e, state) => {
-          const urls = (state && state.crawledUrls) ? state.crawledUrls : [];
-          console.log(`[run] Recovered ${urls.length} crawled URL(s) from saved state`);
-          return runIndexPhase(urls);
-        });
-        return;
-      }
-      runCrawlPhase();
+    const crawlService = require('./worker_crawl');
+    dist.local.routes.put(crawlService, 'crawl-fetch', () => {
+      console.log(`[worker] Ready - listening on ${nodeIp}:${port} (crawl-fetch registered)`);
     });
   });
-});
+
+  process.on('SIGINT', () => {
+    if (dist.node.server) dist.node.server.close();
+    process.exit(0);
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Coordinator                                                        */
+/* ------------------------------------------------------------------ */
+
+function startCoordinator() {
+  const port = args.port || 1234;
+  const nodeIp = args.ip;
+  const seeds = args.seeds.split(',').map((s) => s.trim()).filter(Boolean);
+
+  const workerNodes = args.workers
+      .split(',')
+      .map((w) => {
+        const trimmed = w.trim();
+        if (!trimmed) return null;
+        const [ip, p] = trimmed.split(':');
+        return {ip, port: parseInt(p, 10)};
+      })
+      .filter((n) => n && n.ip && !isNaN(n.port));
+
+  if (workerNodes.length === 0) {
+    console.error(
+        '[coordinator] No workers specified.\n' +
+        '  Use --workers "ip1:port1,ip2:port2,..."',
+    );
+    process.exit(1);
+  }
+
+  console.log('[coordinator] ──────────────────────────────────────');
+  console.log('[coordinator]  Distributed Search Engine');
+  console.log('[coordinator] ──────────────────────────────────────');
+  workerNodes.forEach((n) => console.log(`[coordinator]   worker → ${n.ip}:${n.port}`));
+  console.log(`[coordinator] Seeds    : ${seeds.length} URL(s)`);
+  console.log(`[coordinator] Max pgs  : ${args.maxPages}`);
+  console.log('[coordinator] ──────────────────────────────────────');
+
+  if (args.clean) {
+    const fs = require('fs');
+    const path = require('path');
+    const storeDir = path.join(__dirname, '..', 'store');
+    if (fs.existsSync(storeDir)) {
+      fs.rmSync(storeDir, {recursive: true, force: true});
+      console.log('[coordinator] Cleaned store/ directory');
+    }
+  }
+
+  const dist = distribution({ip: nodeIp, port});
+
+  dist.node.start((e) => {
+    if (e) {
+      console.error('[coordinator] Failed to start:', e);
+      process.exit(1);
+    }
+    console.log(`[coordinator] Node started on ${nodeIp}:${port}`);
+
+    waitForWorkers(dist, workerNodes, 0, () => {
+      console.log(`[coordinator] All ${workerNodes.length} worker(s) ready`);
+
+      const id = dist.util.id;
+      const group = {};
+      workerNodes.forEach((n) => {
+        group[id.getSID(n)] = n;
+      });
+
+      const groupNames = ['crawl', 'index'];
+      registerGroups(dist, groupNames, group, 0, () => {
+        console.log('[coordinator] Groups registered:', groupNames.join(', '));
+
+        if (args.skipCrawl) {
+          console.log('[coordinator] Skipping crawl (--skipCrawl)');
+          // Recover URLs from chunked storage (new format) or legacy state
+          loadCrawledUrlChunks(dist, 'crawl', (urls) => {
+            if (urls.length > 0) {
+              console.log(`[coordinator] Recovered ${urls.length} crawled URL(s)`);
+              return runIndexPhase(dist, urls);
+            }
+            // Fallback: try legacy __crawler_state__ format
+            dist['crawl'].store.get('__crawler_state__', (e, state) => {
+              const legacy = (state && state.crawledUrls) ? state.crawledUrls : [];
+              console.log(`[coordinator] Recovered ${legacy.length} URL(s) (legacy)`);
+              return runIndexPhase(dist, legacy);
+            });
+          });
+          return;
+        }
+        runCrawlPhase(dist, seeds);
+      });
+    });
+  });
+
+  process.on('SIGINT', () => {
+    console.log('\n[coordinator] Shutting down …');
+    let remaining = workerNodes.length;
+    if (remaining === 0) process.exit(0);
+
+    workerNodes.forEach((node) => {
+      dist.local.comm.send(
+          [], {node, service: 'status', method: 'stop'},
+          () => {
+            if (--remaining === 0) {
+              if (dist.node.server) dist.node.server.close();
+              process.exit(0);
+            }
+          },
+      );
+    });
+
+    setTimeout(() => process.exit(1), 5000);
+  });
+}
 
 /* ------------------------------------------------------------------ */
 /*  Pipeline phases                                                    */
 /* ------------------------------------------------------------------ */
 
-function runCrawlPhase() {
+function runCrawlPhase(dist, seeds) {
   const {crawl} = require('./crawler');
   crawl({
     seeds,
@@ -148,18 +240,18 @@ function runCrawlPhase() {
     groupName: 'crawl',
   }, (e, result) => {
     if (e) {
-      console.error('[run] Crawl failed:', e);
+      console.error('[coordinator] Crawl failed:', e);
       process.exit(1);
     }
-    console.log(`[run] Crawl done — ${result.totalCrawled} page(s)`);
-    runIndexPhase(result.crawledUrls);
+    console.log(`[coordinator] Crawl done - ${result.totalCrawled} page(s)`);
+    runIndexPhase(dist, result.crawledUrls);
   });
 }
 
-function runIndexPhase(crawledUrls) {
+function runIndexPhase(dist, crawledUrls) {
   if (args.skipIndex) {
-    console.log('[run] Skipping index (--skipIndex)');
-    return runServePhase();
+    console.log('[coordinator] Skipping index (--skipIndex)');
+    return runPageRankPhase(dist, crawledUrls);
   }
 
   const {buildIndex} = require('./indexer');
@@ -169,13 +261,39 @@ function runIndexPhase(crawledUrls) {
     crawledUrls,
   }, (e, result) => {
     if (e) {
-      console.error('[run] Index failed:', e);
+      console.error('[coordinator] Index failed:', e);
       process.exit(1);
     }
     console.log(
-        `[run] Index done — ${result.totalTerms} terms ` +
+        `[coordinator] Index done - ${result.totalTerms} terms ` +
         `from ${result.totalDocs} doc(s)`,
     );
+    runPageRankPhase(dist, crawledUrls);
+  });
+}
+
+function runPageRankPhase(dist, crawledUrls) {
+  if (args.skipIndex) {
+    console.log('[coordinator] Skipping PageRank (--skipIndex)');
+    return runServePhase();
+  }
+
+  const {computePageRank} = require('./pagerank');
+  computePageRank({
+    crawlGroupName: 'crawl',
+    indexGroupName: 'index',
+    crawledUrls,
+    iterations: 10,
+  }, (e, result) => {
+    if (e) {
+      console.error('[coordinator] PageRank failed:', e);
+      // Non-fatal - continue to serve
+    } else {
+      console.log(
+          `[coordinator] PageRank done - ${result.pageCount} pages, ` +
+          `${result.iterations} iterations`,
+      );
+    }
     runServePhase();
   });
 }
@@ -187,12 +305,12 @@ function runServePhase() {
     indexGroupName: 'index',
   }, (e) => {
     if (e) {
-      console.error('[run] Server failed:', e);
+      console.error('[coordinator] Server failed:', e);
       process.exit(1);
     }
-    console.log('[run] ──────────────────────────────────────');
-    console.log(`[run]  Ready → http://localhost:${args.serverPort}`);
-    console.log('[run] ──────────────────────────────────────');
+    console.log('[coordinator] ──────────────────────────────────────');
+    console.log(`[coordinator]  Ready → http://${args.ip}:${args.serverPort}`);
+    console.log('[coordinator] ──────────────────────────────────────');
   });
 }
 
@@ -200,45 +318,50 @@ function runServePhase() {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function spawnNodes(nodes, idx, cb) {
+// Polls each worker via a status ping until it responds, then moves to the next.
+function waitForWorkers(dist, nodes, idx, cb) {
   if (idx >= nodes.length) return cb();
-  dist.local.status.spawn(nodes[idx], (e) => {
-    if (e) {
-      console.error(`[run] Cannot spawn worker ${idx}:`, e);
-      process.exit(1);
-    }
-    spawnNodes(nodes, idx + 1, cb);
-  });
+  const node = nodes[idx];
+  console.log(`[coordinator] Waiting for worker ${node.ip}:${node.port} …`);
+  const attempt = () => {
+    dist.local.comm.send(
+        ['sid'], {node, service: 'status', method: 'get'},
+        (e) => {
+          if (e) {
+            setTimeout(attempt, 1000);
+          } else {
+            console.log(`[coordinator] Worker ${node.ip}:${node.port} is up`);
+            waitForWorkers(dist, nodes, idx + 1, cb);
+          }
+        },
+    );
+  };
+  attempt();
 }
 
-function registerGroups(names, group, idx, cb) {
+function registerGroups(dist, names, group, idx, cb) {
   if (idx >= names.length) return cb();
   const name = names[idx];
   const config = {gid: name};
   dist.local.groups.put(config, group, () => {
     dist[name].groups.put(config, group, () => {
-      registerGroups(names, group, idx + 1, cb);
+      registerGroups(dist, names, group, idx + 1, cb);
     });
   });
 }
 
-/* Graceful shutdown — tear down workers on exit */
-process.on('SIGINT', () => {
-  console.log('\n[run] Shutting down …');
-  let remaining = workerNodes.length;
-  if (remaining === 0) process.exit(0);
-
-  workerNodes.forEach((node) => {
-    dist.local.comm.send(
-        [], {node, service: 'status', method: 'stop'},
-        () => {
-          if (--remaining === 0) {
-            if (dist.node.server) dist.node.server.close();
-            process.exit(0);
-          }
-        },
-    );
-  });
-
-  setTimeout(() => process.exit(1), 5000);
-});
+function loadCrawledUrlChunks(dist, gid, cb) {
+  const URL_LIST_KEY = '__crawled_urls__';
+  const allUrls = [];
+  let idx = 0;
+  function loadNext() {
+    const key = URL_LIST_KEY + ':' + idx;
+    dist[gid].store.get(key, (e, chunk) => {
+      if (e || !chunk || !Array.isArray(chunk)) return cb(allUrls);
+      allUrls.push(...chunk);
+      idx += chunk.length;
+      loadNext();
+    });
+  }
+  loadNext();
+}

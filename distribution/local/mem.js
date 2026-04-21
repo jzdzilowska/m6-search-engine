@@ -114,4 +114,27 @@ function del(configuration, callback) {
   return callback(null, value);
 }
 
-module.exports = {put, get, del, append};
+/**
+ * Append multiple key-value pairs in one call.
+ * @param {Array<{key: string, value: any}>} pairs
+ * @param {string} gid
+ * @param {Callback} callback
+ */
+function batchAppend(pairs, gid, callback) {
+  const ns = gid || 'local';
+  if (!store[ns]) store[ns] = {};
+  for (const {key, value} of pairs) {
+    if (key in store[ns]) {
+      if (Array.isArray(store[ns][key])) {
+        store[ns][key].push(value);
+      } else {
+        store[ns][key] = [store[ns][key], value];
+      }
+    } else {
+      store[ns][key] = [value];
+    }
+  }
+  return callback(null, 'ok');
+}
+
+module.exports = {put, get, del, append, batchAppend};

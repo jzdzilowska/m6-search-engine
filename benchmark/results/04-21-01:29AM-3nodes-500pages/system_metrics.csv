@@ -1,0 +1,13 @@
+metric,value,unit
+Worker Nodes,3,nodes
+Seed URLs,1,URLs
+Max Pages,500,pages
+Pages Crawled,500,pages
+Crawl Store Size,0,bytes
+Crawl Store Files,0,files
+Unique Index Terms,24743,terms
+Indexed Documents,500,docs
+Total Store Size,0,bytes
+Total Store Files,0,files
+Index-Only Size,0,bytes
+Index-Only Files,0,files

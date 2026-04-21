@@ -156,7 +156,7 @@ function measureStoreSize() {
         const sz = fs.statSync(full).size;
         totalBytes += sz;
         totalFiles++;
-        // store/<nid>/<gid>/file — extract nid
+        // store/<nid>/<gid>/file - extract nid
         const rel = path.relative(storeDir, full);
         const nid = rel.split(path.sep)[0] || 'unknown';
         if (!perNode[nid]) perNode[nid] = {bytes: 0, files: 0};
@@ -176,7 +176,7 @@ function formatBytes(b) {
 }
 
 console.log('[bench] ══════════════════════════════════════════');
-console.log('[bench]  Benchmark — Distributed Search Engine');
+console.log('[bench]  Benchmark - Distributed Search Engine');
 console.log('[bench] ══════════════════════════════════════════');
 console.log(`[bench] Workers    : ${numNodes} (ports ${basePort}–${basePort + numNodes - 1})`);
 console.log(`[bench] Seeds      : ${seeds.length} URL(s)`);
@@ -269,7 +269,7 @@ function runCrawlPhase() {
     metrics.crawl.storeTotalFiles = crawlStore.totalFiles;
     metrics.crawl.storePerNode = crawlStore.perNode;
 
-    console.log(`[bench] Crawl done — ${result.totalCrawled} page(s) in ${dur}ms (${metrics.crawl.pagesPerSec.toFixed(2)} pages/sec)`);
+    console.log(`[bench] Crawl done - ${result.totalCrawled} page(s) in ${dur}ms (${metrics.crawl.pagesPerSec.toFixed(2)} pages/sec)`);
     console.log(`[bench] Crawl store: ${formatBytes(crawlStore.totalBytes)} across ${crawlStore.totalFiles} files, ${Object.keys(crawlStore.perNode).length} node(s)`);
     runIndexPhase(result.crawledUrls);
   });
@@ -313,7 +313,7 @@ function runIndexPhase(crawledUrls) {
     metrics.index.indexOnlyFiles = Math.max(0, indexStore.totalFiles - (metrics.crawl.storeTotalFiles || 0));
 
     console.log(
-        `[bench] Index done — ${result.totalTerms} terms from ${totalDocs} doc(s) ` +
+        `[bench] Index done - ${result.totalTerms} terms from ${totalDocs} doc(s) ` +
         `in ${dur}ms (${metrics.index.docsPerSec.toFixed(2)} docs/sec)`,
     );
     console.log(`[bench] Total store: ${formatBytes(indexStore.totalBytes)} across ${indexStore.totalFiles} files`);
@@ -543,6 +543,6 @@ function shutdown() {
 
 /* Graceful shutdown on SIGINT */
 process.on('SIGINT', () => {
-  console.log('\n[bench] Interrupted — shutting down…');
+  console.log('\n[bench] Interrupted - shutting down...');
   shutdown();
 });

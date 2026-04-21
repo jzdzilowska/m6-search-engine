@@ -32,7 +32,7 @@ function buildIndex(config, callback) {
   console.log(`[indexer] Indexing ${totalDocs} pages …`);
 
   /* -----------------------------------------------------------------
-   * Mapper — fully self-contained (no require — workers lack it).
+   * Mapper - fully self-contained (no require - workers lack it).
    * Tokenises, stems (Porter algorithm), counts per-term frequency.
    * Emits { term: { url, tf } } for every unique stem in the page.
    * ----------------------------------------------------------------- */
@@ -160,7 +160,7 @@ function buildIndex(config, callback) {
   };
 
   /* -----------------------------------------------------------------
-   * Reducer — merges per-page TF entries into a single posting list
+   * Reducer - merges per-page TF entries into a single posting list
    * per term: { url1: tf1, url2: tf2, … }
    * ----------------------------------------------------------------- */
   const indexReducer = (key, values) => {
@@ -207,7 +207,7 @@ function buildIndex(config, callback) {
 
   /* ----- Merge and persist after all MR chunks complete ----- */
   function finishIndex() {
-    // Merge posting lists — same term can appear in multiple chunks
+    // Merge posting lists - same term can appear in multiple chunks
     const merged = {}; // term → {url: tf, …}
     for (const obj of allResults) {
       const term = Object.keys(obj)[0];

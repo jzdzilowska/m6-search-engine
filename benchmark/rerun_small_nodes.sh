@@ -42,7 +42,7 @@ echo "════════════════════════�
 for N in "${NODE_COUNTS[@]}"; do
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo " Running with $N node(s) — $MAX_PAGES pages..."
+  echo " Running with $N node(s) - $MAX_PAGES pages..."
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
   # Kill leftover workers
@@ -66,13 +66,13 @@ for N in "${NODE_COUNTS[@]}"; do
   )
 
   OUTPUT=$(node "$DIR/benchmark.js" "${ARGS[@]}" 2>&1 | tee /dev/stderr) || {
-    echo "[rerun] FAILED with $N nodes — skipping"
+    echo "[rerun] FAILED with $N nodes - skipping"
     continue
   }
 
   OUT_DIR=$(echo "$OUTPUT" | grep -oP '(?<=Output dir : ).*')
   if [ -z "$OUT_DIR" ]; then
-    echo "[rerun] Could not find output dir for N=$N — skipping"
+    echo "[rerun] Could not find output dir for N=$N - skipping"
     continue
   fi
 
@@ -119,7 +119,7 @@ with open('$SUMMARY', 'w') as f:
             f.write(line)
 "
 
-  echo "[rerun] N=$N done — updated $SUMMARY"
+  echo "[rerun] N=$N done - updated $SUMMARY"
 done
 
 echo ""

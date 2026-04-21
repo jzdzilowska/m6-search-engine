@@ -1,5 +1,5 @@
 /**
- * Crawl-fetch service — registered locally on each worker at boot time.
+ * Crawl-fetch service - registered locally on each worker at boot time.
  *
  * Workers only fetch + extract. They return page content to the coordinator,
  * which handles distributed storage (the coordinator has groups properly
@@ -107,7 +107,7 @@ function processPage(url, html) {
 
 /**
  * Fetch a batch of URLs, extract content, return results to coordinator.
- * Storage is NOT done here — coordinator handles it.
+ * Storage is NOT done here - coordinator handles it.
  */
 function fetchBatch(urls, cb) {
   if (!urls || urls.length === 0) return cb(null, {pages: [], outlinks: []});
@@ -117,11 +117,11 @@ function fetchBatch(urls, cb) {
   const pages = [];
   const allOutlinks = [];
 
-  // Safety timeout — return whatever we have after BATCH_TIMEOUT
+  // Safety timeout - return whatever we have after BATCH_TIMEOUT
   const timer = setTimeout(() => {
     if (finished) return;
     finished = true;
-    console.log(`[crawl-fetch] Batch timeout — returning ${pages.length}/${urls.length} pages`);
+    console.log(`[crawl-fetch] Batch timeout - returning ${pages.length}/${urls.length} pages`);
     cb(null, {pages, outlinks: allOutlinks});
   }, BATCH_TIMEOUT);
 

@@ -6,7 +6,7 @@ course.
 
 By the end of this assignment you will be familiar with the basics of
 JavaScript, shell scripting, stream processing, Docker containers, deployment
-to AWS, and performance characterization—all of which will be useful for the
+to AWS, and performance characterization-all of which will be useful for the
 rest of the project.
 
 Your task is to implement a simple search engine that crawls a set of web

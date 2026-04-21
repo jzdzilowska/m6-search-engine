@@ -51,8 +51,9 @@ const args = require('yargs/yargs')(process.argv.slice(2))
       type: 'string',
       describe: '[coordinator] Comma-separated seed URLs',
       default: [
-        'https://cs.brown.edu/courses/csci1380/sandbox/1/',
-        'https://cs.brown.edu/courses/csci1380/sandbox/2/',
+        // 'https://cs.brown.edu/courses/csci1380/sandbox/1/',
+        // 'https://cs.brown.edu/courses/csci1380/sandbox/2/',
+        'https://atlas.cs.brown.edu/data/gutenberg/'
       ].join(','),
     })
     .option('maxPages', {
@@ -63,12 +64,12 @@ const args = require('yargs/yargs')(process.argv.slice(2))
     .option('queryTerms', {
       type: 'string',
       describe: '[coordinator] Comma-separated query strings to benchmark',
-      default: 'computer science,algorithm,data structure,network,system',
+      default: 'bible, shakespeare, cicero, doyle, plato, homer, philosophy, science, history, art',
     })
     .option('queryRuns', {
       type: 'number',
       describe: '[coordinator] Number of times to run each query (for avg latency)',
-      default: 5,
+      default: 100,
     })
     .option('warmupQueries', {
       type: 'number',
@@ -158,9 +159,14 @@ function startCoordinator() {
 
   /* ---- Unique output directory ---- */
   const runTs = new Date();
-  const tsStr = runTs.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const runId = crypto.randomBytes(3).toString('hex');
-  const outDir = path.join(__dirname, 'results', `${tsStr}_${runId}`);
+  const mm = String(runTs.getMonth() + 1).padStart(2, '0');
+  const dd = String(runTs.getDate()).padStart(2, '0');
+  const hh = runTs.getHours();
+  const min = String(runTs.getMinutes()).padStart(2, '0');
+  const ampm = hh >= 12 ? 'PM' : 'AM';
+  const hh12 = String(hh % 12 || 12).padStart(2, '0');
+  const dirName = `${mm}-${dd}-${hh12}:${min}${ampm}-${workerNodes.length}nodes-${args.maxPages}pages`;
+  const outDir = path.join(__dirname, 'results', dirName);
   fs.mkdirSync(outDir, {recursive: true});
 
   /* ---- Metrics collector ---- */

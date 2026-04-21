@@ -1,7 +1,7 @@
 const {urlKey} = require('./utils');
 const crypto = require('crypto');
 
-const BATCH_SIZE = 30;
+const BATCH_SIZE = 50;
 const MAX_FRONTIER = 200000;
 
 const STATE_KEY = '__crawler_state__';

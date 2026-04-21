@@ -11,10 +11,13 @@ const https = require('https');
 const {convert} = require('html-to-text');
 const {URL} = require('url');
 
-const FETCH_TIMEOUT = 15000;
+// const FETCH_TIMEOUT = 15000;
+const FETCH_TIMEOUT = 5000;
+
 const MAX_BODY = 2 * 1024 * 1024;
 const MAX_TEXT = 30000;
-const BATCH_TIMEOUT = 20000;
+// const BATCH_TIMEOUT = 20000;
+const BATCH_TIMEOUT = 10000;
 
 function fetchPage(pageUrl, cb) {
   let called = false;

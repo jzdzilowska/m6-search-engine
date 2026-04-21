@@ -64,7 +64,7 @@ def main():
     query_path = os.path.join(out_dir, 'query_metrics.csv')
     sys_path = os.path.join(out_dir, 'system_metrics.csv')
     json_path = os.path.join(out_dir, 'results.json')
-    pdf_path = os.path.join(out_dir, 'report.pdf')
+    pdf_path = os.path.join(out_dir, os.path.basename(out_dir.rstrip('/')) + '.pdf')
 
     if not os.path.exists(comp_path):
         print(f"Error: {comp_path} not found")

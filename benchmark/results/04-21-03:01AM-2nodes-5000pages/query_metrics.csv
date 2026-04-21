@@ -1,0 +1,11 @@
+query,avg_latency_ms,min_latency_ms,max_latency_ms,runs
+"bible",1.44,1,2,100
+"shakespeare",1.47,1,2,100
+"cicero",1.3,1,2,100
+"doyle",1.38,1,2,100
+"plato",1.32,1,2,100
+"homer",1.3,1,2,100
+"philosophy",1.58,1,2,100
+"science",3.65,3,5,100
+"history",6.3,5,7,100
+"art",2.01,1,3,100

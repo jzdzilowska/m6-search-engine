@@ -75,6 +75,11 @@ const args = require('yargs/yargs')(process.argv.slice(2))
       describe: '[coordinator] Skip indexing (reuse stored index)',
       default: false,
     })
+    .option('maxIndex', {
+      type: 'number',
+      describe: '[coordinator] Max number of pages to index (default: all)',
+      default: 0,
+    })
     .option('clean', {
       type: 'boolean',
       describe: '[coordinator] Wipe all stored data before running',
@@ -252,6 +257,10 @@ function runIndexPhase(dist, crawledUrls) {
   if (args.skipIndex) {
     console.log('[coordinator] Skipping index (--skipIndex)');
     return runPageRankPhase(dist, crawledUrls);
+  }
+  if (args.maxIndex > 0 && crawledUrls.length > args.maxIndex) {
+    console.log(`[coordinator] Limiting index to ${args.maxIndex} of ${crawledUrls.length} pages`);
+    crawledUrls = crawledUrls.slice(0, args.maxIndex);
   }
 
   const {buildIndex} = require('./indexer');
